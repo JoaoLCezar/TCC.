@@ -1,25 +1,36 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Produtos - vendaFacil</title>
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
-</head>
-<body>
-    <h1>Nossos Produtos</h1>
+{% extends 'base.html' %}
 
-    <ul>
-        {% for produto in lista_de_produtos %}
-            <li>
-                <strong>{{ produto.nome }}</strong> - 
-                Preço: R$ {{produto.preco }} - 
-                Estoque: {{ produto.estoque }} unidades
-            </li>
-        {% empty %}
-            <li>Nenhum produto cadastrado ainda.</li>
-        {%endfor %}
-    </ul>
-</body>
-</html>
+{% block title %}Lista de Produtos - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Nossos Produtos</h1>
+    </div>
+
+
+<div class="row">
+    {% for produto in lista_de_produtos %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{% url 'products:detalhe_produto' produto.id %}" class="text-decoration-none text-dark">
+                        {{ produto.nome }}
+                </h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ produto.categoria }}</h6>
+                <p class="card-text">
+                    <strong>Preço:</strong> R$ {{ produto.preco }} <br>
+                    <strong>Estoque:</strong> {{ produto.estoque }} unidades
+                </p>
+                </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-warning" role="alert">
+            Nenhum produto cadastrado ainda.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

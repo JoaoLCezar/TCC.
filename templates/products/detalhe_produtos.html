@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ produto.nome }} - Detalhes do Produto{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">{{ produto.nome }}</h1>
+                <h5 class="card-subtitle mb-2 text-muted">{{ produto.categoria }}</h5>
+                
+                <hr>
+                
+                <h3>Descrição</h3>
+                <p class="card-text">
+                    {% if produto.descricao %}
+                        {{ produto.descricao|linebreaks }}
+                    {% else %}
+                        <span class="text-muted">Este produto não possui uma descrição detalhada.</span>
+                    {% endif %}
+                </p>
+                
+                <hr>
+
+                <a href="{% url 'products:listar_produtos' %}" class="btn btn-secondary">
+                    &larr; Voltar para a lista
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h4 class="card-title">Informações Rápidas</h4>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-light">
+                        <strong>Preço:</strong>
+                        <span class="fs-4 text-success float-end">R$ {{ produto.preco }}</span>
+                    </li>
+                    <li class="list-group-item bg-light">
+                        <strong>Estoque:</strong>
+                        <span class="fs-4 float-end">{{ produto.estoque }}</span>
+                    </li>
+                    <li class="list-group-item bg-light">
+                        <strong>Data de Cadastro:</strong>
+                        <span class="float-end">{{ produto.data_criacao|date:"d/m/Y" }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
