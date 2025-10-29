@@ -10,5 +10,8 @@ urlpatterns = [
 
     #Rota para criar NovoProduto
     path('novo/', views.criar_produto, name='criar_produto'),
+
+    #Rota para atualizar produto
+    path('<int:pk>/editar/', views.atualizar_produto, name='atualizar_produto'),
 ]
 

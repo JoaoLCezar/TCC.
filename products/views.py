@@ -39,3 +39,24 @@ def criar_produto(request):
             'form': form
         }
     return render(request, 'products/form_produtos.html', context)
+
+
+def atualizar_produto(request, pk):
+    produto = get_object_or_404(Produto, pk=pk)
+
+    if request.method =='POST':
+        form = ProdutoForm(request.POST, instance=produto)
+
+        if form.is_valid():
+            form.save()
+
+            return redirect('products:detalhe_produto', pk=produto.pk)
+        
+    else:
+        form = ProdutoForm(instance=produto)
+
+    context = {
+        'form': form
+    }
+    return render(request, 'products/form_produtos.html', context)
+    

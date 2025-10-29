@@ -22,6 +22,9 @@
                 </p>
                 
                 <hr>
+                <a href="{% url 'products:atualizar_produto' pk=produto.pk %}" class="btn btn-primary me-2">
+                    Editar Produto
+                </a>
 
                 <a href="{% url 'products:listar_produtos' %}" class="btn btn-secondary">
                     &larr; Voltar para a lista
