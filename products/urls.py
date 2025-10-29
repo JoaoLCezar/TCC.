@@ -13,5 +13,8 @@ urlpatterns = [
 
     #Rota para atualizar produto
     path('<int:pk>/editar/', views.atualizar_produto, name='atualizar_produto'),
+
+    #Rota para Excluir produto
+    path('<int:pk>/excluir/', views.excluir_produto, name='excluir_produto'),
 ]
 

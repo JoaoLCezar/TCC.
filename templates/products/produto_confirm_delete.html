@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão - {{ produto.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Excluir Produto</h1>
+                <hr>
+                
+                <p class_="fs-5">
+                    Você tem certeza que deseja excluir permanentemente o produto: 
+                    <strong>"{{ produto.nome }}"</strong>?
+                </p>
+                <p class="text-danger">
+                    Esta ação não pode ser desfeita.
+                </p>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <button type="submit" class="btn btn-danger me-2">
+                        Sim, excluir permanentemente
+                    </button>
+
+                    <a href="{% url 'products:detalhe_produto' pk=produto.pk %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -60,3 +60,15 @@ def atualizar_produto(request, pk):
     }
     return render(request, 'products/form_produtos.html', context)
     
+def excluir_produto(request, pk):
+    produto = get_object_or_404(Produto, pk=pk)
+
+    if request.method == 'POST':       
+        produto.delete()
+
+        return redirect('products:listar_produtos')
+    
+    context = {
+        'produto': produto
+    }
+    return render(request, 'products/produto_confirm_delete.html', context)

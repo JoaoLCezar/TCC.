@@ -26,6 +26,10 @@
                     Editar Produto
                 </a>
 
+                <a href="{% url 'products:excluir_produto' pk=produto.pk %}" class="btn btn-danger me-2">
+                    Excluir
+                </a>
+                
                 <a href="{% url 'products:listar_produtos' %}" class="btn btn-secondary">
                     &larr; Voltar para a lista
                 </a>
