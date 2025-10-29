@@ -1,5 +1,6 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from .models import Produto
+from .forms import ProdutoForm
 
 # Create your views here.
 
@@ -22,3 +23,19 @@ def detalhe_produto(request, pk):
         'produto' : produto
     }
     return render(request, 'products/detalhe_produtos.html', contexto)
+
+def criar_produto(request):
+    if request.method =='POST':
+        form = ProdutoForm(request.POST)
+        
+        if form.is_valid():
+            form.save()
+            return redirect('products:listar_produtos')
+            
+    else:
+        form = ProdutoForm()
+
+    context = {
+            'form': form
+        }
+    return render(request, 'products/form_produtos.html', context)
