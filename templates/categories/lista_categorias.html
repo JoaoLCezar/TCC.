@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestão de Categorias - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h1>Gestão de Categorias</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'categories:criar_categoria' %}" class="btn btn-primary">
+                + Adicionar Nova Categoria
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if lista_de_categorias %}
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Nome da Categoria</th>
+                            <th scope="col" class="text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for categoria in lista_de_categorias %}
+                        <tr>
+                            <td>{{ categoria.nome }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'categories:atualizar_categoria' pk=categoria.pk %}" class="btn btn-sm btn-outline-primary me-2">
+                                    Editar
+                                </a>
+                                <a href="{% url 'categories:excluir_categoria' pk=categoria.pk %}" class="btn btn-sm btn-outline-danger">
+                                    Excluir
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-info text-center" role="alert">
+                    Nenhuma categoria cadastrada ainda.
+                    Clique em "Adicionar Nova Categoria" para começar.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
