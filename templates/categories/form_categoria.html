@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Nova Categoria - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Adicionar Nova Categoria</h1>
+                <hr>
+                
+                <form method="POST" action="">
+                    
+                    {% csrf_token %}
+
+                    {{ form.as_p }}
+                    
+                    <hr>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        Salvar Categoria
+                    </button>
+                    
+                    <a href="{% url 'categories:listar_categorias' %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

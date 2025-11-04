@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão - {{ categoria.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Excluir Categoria</h1>
+                <hr>
+                
+                <p class="fs-5">
+                    Você tem certeza que deseja excluir permanentemente a categoria: 
+                    <strong>"{{ categoria.nome }}"</strong>?
+                </p>
+                <p class="text-danger">
+                    <strong>Atenção:</strong> Esta ação não pode ser desfeita.
+                    (Se houver produtos associados a ela, você pode precisar
+                    revisá-los depois, ou implementar uma lógica de restrição).
+                </p>
+
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <button type="submit" class="btn btn-danger me-2">
+                        Sim, excluir permanentemente
+                    </button>
+
+                    <a href="{% url 'categories:listar_categorias' %}" class="btn btn-secondary">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
