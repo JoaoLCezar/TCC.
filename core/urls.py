@@ -24,4 +24,9 @@ urlpatterns = [
 
     path('categorias/', include('categories.urls', namespace='categories')),
 
+    path('vendas/', include('sales.urls', namespace='sales')),
+
+    path('accounts/', include('django.contrib.auth.urls')),
+
+
 ]

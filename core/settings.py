@@ -41,7 +41,8 @@ INSTALLED_APPS = [
 
     #Apps
     'products',
-    'categories'
+    'categories',
+    'sales'
 ]
 
 MIDDLEWARE = [
@@ -133,3 +134,9 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+LOGIN_REDIRECT_URL = '/vendas/caixa/' 
+
+LOGOUT_REDIRECT_URL = '/'
