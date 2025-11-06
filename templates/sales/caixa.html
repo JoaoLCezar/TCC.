@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %} Operação de Caixa - VendaFácil {% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title"> Caixa - Venda Atual</h1>
+
+                {% csrf_token %}
+
+                <hr>
+
+                <ul class="list-group" id="lista-carrinho">
+                    <li class="list-group-item text-center text-muted" id="carrinho-vazio-msg">
+                        Carrinho vazio. Adicione produtos da lista ao lado.
+                    </li>
+                </ul>
+
+                <hr>
+
+                <div class="d-flex justify-content-between fs-3">
+                    <strong>TOTAL: </strong>
+                    <strong id="total-venda">R$ 0,00</strong>
+                </div>
+
+                <hr>
+
+                <div class="d-grid">
+                    <button class="btn btn-success btn-lg" id="btn-finalizar-venda" disabled>
+                        Finalizar Venda
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Selecionar Produtos</h3>
+                
+                <hr>
+
+                <div class="list-group" id="lista-produtos-selecao">
+                    {% if lista_de_produtos %}
+                        {% for produto in lista_de_produtos %}
+                            <button type="button"
+                                    class="list-group-item list-group-item-action btn-add-produto"
+                                    data-id="{{ produto.pk }}"
+                                    data-nome="{{ produto.nome }}"
+                                    data-preco="{{ produto.preco }}">
+                                
+                                    <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ produto.nome }}</h5>
+                                    <small class="text-success fs-6">R$ {{ produto.preco }}</small>
+                                </div>
+                                <small class="text-muted">Estoque: {{ produto.estoque }}</small>
+                            </button>
+                        {% endfor %}
+                    {% else %}
+                            <div class="alert alert-warning">
+                                Nenhum produto cadastrado no sistema.
+                                Vá para a <a href="{% url 'products:criar_produto' %}">Gestão de Produtos</a> para adicionar.
+                            </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block scripts %}
+
+
+
+<script>
+
+    const PROCESSAR_VENDA_URL = "{% url 'sales:processar_venda' %}";
+
+    document.addEventListener('DOMContentLoaded', function(){
+        let carrinho = {};
+
+        const listaProdutos = document.getElementById('lista-produtos-selecao');
+        const listaCarrinho = document.getElementById('lista-carrinho');
+        const msgCarrinhoVazio = document.getElementById('carrinho-vazio-msg');
+        const totalVendaEl = document.getElementById('total-venda');
+        const btnFinalizar = document.getElementById('btn-finalizar-venda');
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        listaProdutos.addEventListener('click', function(event){
+            const botaoProduto = event.target.closest('.btn-add-produto');
+
+            if(botaoProduto) {
+                const id = botaoProduto.dataset.id;
+                const nome = botaoProduto.dataset.nome;
+                const preco = parseFloat(botaoProduto.dataset.preco);
+
+                adicionarAoCarrinho(id, nome, preco);
+            }
+        });
+
+        btnFinalizar.addEventListener('click', function() {
+            processarVenda();
+        });
+
+        function processarVenda() {
+            console.log("Iniciando finalização de venda...");
+            console.log("Carrinho a ser enviado:", carrinho);
+
+            btnFinalizar.disabled = true;
+            btnFinalizar.textContent = 'Processando...';
+
+
+            fetch(PROCESSAR_VENDA_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    carrinho: carrinho
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    alert('Venda finalizada com sucesso!');
+                    carrinho = {};
+                    atualizarTelaCarrinho();
+                } else {
+                    alert('Erro ao processar a venda: ' + data.erro);
+                    btnFinalizar.disabled = false;
+                    btnFinalizar.textContent = 'Finalizar Venda';
+                }
+            })
+            .catch(error => {
+                console.error('Erro de rede:', error);
+                alert('Erro de conexão. A venda não foi finalizada.');
+                btnFinalizar.disabled = false;
+                btnFinalizar.textContent = 'Finalizar Venda';
+            });
+        }
+
+
+        function adicionarAoCarrinho(id, nome, preco) {
+            if(carrinho[id]) {
+                carrinho[id].quantidade++;
+            } else{
+                carrinho[id] = {
+                    nome: nome,
+                    preco: preco,
+                    quantidade: 1
+                };
+            }
+            atualizarTelaCarrinho();
+        }
+
+        function atualizarTelaCarrinho() {
+            listaCarrinho.innerHTML = '';
+            let totalVenda = 0;
+
+            const idsProdutos = Object.keys(carrinho);
+
+            if(idsProdutos.length === 0) {
+                listaCarrinho.appendChild(msgCarrinhoVazio);
+                btnFinalizar.disabled = true;
+            } else {
+                idsProdutos.forEach(id => {
+                    const item = carrinho[id];
+                    const subtotal = item.preco * item.quantidade;
+                    totalVenda += subtotal;
+
+
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    li.innerHTML = `
+                        <div>
+                            <strong>${item.nome}</strong><br>
+                            <small>Qtd: ${item.quantidade} x R$ ${item.preco.toFixed(2)}</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">R$ ${subtotal.toFixed(2)}</span>
+                    `;
+                    listaCarrinho.appendChild(li);
+                });
+                btnFinalizar.disabled = false;
+            }
+
+            totalVendaEl.textContent = `R$ ${totalVenda.toFixed(2)}`;
+        }
+
+    });
+
+</script>
+{% endblock scripts %}
