@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from products.models import Produto
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.db import transaction
+from .models import Venda, ItemVenda
 import json
 
 
@@ -18,6 +20,7 @@ def operacao_caixa(request):
 
 @login_required
 @require_POST   
+@transaction.atomic
 def processar_venda(request):
     try:
         data = json.loads(request.body)
@@ -25,11 +28,46 @@ def processar_venda(request):
 
         if not carrinho_js:
             return JsonResponse({'sucesso': False, 'erro': 'Carrinho vazio'}, status=400)
+        
+        nova_venda = Venda.objects.create(
+            usuario = request.user,
+            status='CONCLUIDA'
+        )
 
-        print("="*30)
-        print("Carrinho recebido com sucesso:")
-        print(carrinho_js)
-        print("="*30)
+        valor_total_venda = 0
+
+        for produto_id, item_info in carrinho_js.items():
+            quantidade_vendida = item_info['quantidade']
+
+            try:
+                produto = Produto.objects.select_for_update().get(pk=produto_id)
+
+            except Produto.DoesNotExist:
+                    raise Exception(f"Produto com ID {produto_id} não encontrado.")
+            
+            if produto.estoque< quantidade_vendida:
+                raise Exception(f"Estoque insuficiente para {produto.nome}.")
+            
+            produto.estoque -= quantidade_vendida
+            produto.save()
+
+            preco_congelado = produto.preco
+            subtotal_item = preco_congelado * quantidade_vendida
+
+            ItemVenda.objects.create(
+                venda=nova_venda,
+                produto=produto,
+                quantidade=quantidade_vendida,
+                preco_unitario=preco_congelado,
+                subtotal=subtotal_item
+            )
+
+
+            valor_total_venda += subtotal_item #Soma o total
+
+        nova_venda.valor_total = valor_total_venda
+        nova_venda.save()
+
 
 
         return JsonResponse({'sucesso': True, 'mensagem': 'Venda processada com sucesso!'})
@@ -37,5 +75,4 @@ def processar_venda(request):
     except json.JSONDecodeError:
         return JsonResponse({'sucesso': False, 'erro': 'Dados inválidos (JSON).'}, status=400)
     except Exception as e:
-        print(f"Erro inesperado: {e}")
         return JsonResponse({'sucesso': False, 'erro': str(e)}, status=500)
