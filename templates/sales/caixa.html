@@ -79,9 +79,11 @@
 
 
 <script>
-
     const PROCESSAR_VENDA_URL = "{% url 'sales:processar_venda' %}";
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+</script>
 
+<script>
     document.addEventListener('DOMContentLoaded', function(){
         let carrinho = {};
 
@@ -91,7 +93,6 @@
         const totalVendaEl = document.getElementById('total-venda');
         const btnFinalizar = document.getElementById('btn-finalizar-venda');
 
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         listaProdutos.addEventListener('click', function(event){
             const botaoProduto = event.target.closest('.btn-add-produto');
@@ -108,6 +109,22 @@
         btnFinalizar.addEventListener('click', function() {
             processarVenda();
         });
+
+        listaCarrinho.addEventListener('click', function(event) {
+            if (event.target.classList.contains('btn-subtrair-item')) {
+                const id = event.target.dataset.id;
+                subtrairDoCarrinho(id);
+            }
+
+            if (event.target.classList.contains('btn-adicionar-item')) {
+                const id = event.target.dataset.id;
+                // Para adicionar, podemos simplesmente chamar a função que já temos,
+                // mas precisamos de pegar os dados do carrinho (nome, preco).
+                if (carrinho[id]) {
+                    adicionarAoCarrinho(id, carrinho[id].nome, carrinho[id].preco);
+                }
+            }
+        })
 
         function processarVenda() {
             console.log("Iniciando finalização de venda...");
@@ -160,11 +177,20 @@
             }
             atualizarTelaCarrinho();
         }
+        function subtrairDoCarrinho(id) {
+            if (!carrinho[id]) return;
+            carrinho[id].quantidade--;
+
+            if (carrinho[id].quantidade <= 0 ) {
+                delete carrinho[id];
+            }
+
+            atualizarTelaCarrinho();
+        }
 
         function atualizarTelaCarrinho() {
             listaCarrinho.innerHTML = '';
             let totalVenda = 0;
-
             const idsProdutos = Object.keys(carrinho);
 
             if(idsProdutos.length === 0) {
@@ -184,7 +210,19 @@
                             <strong>${item.nome}</strong><br>
                             <small>Qtd: ${item.quantidade} x R$ ${item.preco.toFixed(2)}</small>
                         </div>
-                        <span class="badge bg-primary rounded-pill">R$ ${subtotal.toFixed(2)}</span>
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-outline-danger btn-sm btn-subtrair-item me-2" 
+                                    data-id="${id}">
+                                &ndash;
+                            </button>
+                            
+                            <button class="btn btn-outline-success btn-sm btn-adicionar-item me-3" 
+                                    data-id="${id}">
+                                +
+                            </button>
+                            
+                            <span class="badge bg-primary rounded-pill">R$ ${subtotal.toFixed(2)}</span>
+                        </div>
                     `;
                     listaCarrinho.appendChild(li);
                 });
