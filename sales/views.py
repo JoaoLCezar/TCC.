@@ -80,10 +80,20 @@ def processar_venda(request):
     
 @login_required
 def historico_vendas(request):
-    lista_vendas = Venda.objects.all().order_by('-data_hora')
+    filtro_status = request.GET.get('status','TODOS')
+    if filtro_status == 'CONCLUIDA':
+        lista_vendas = Venda.objects.filter(status='CONCLUIDA')
+    elif filtro_status == 'CANCELADA':
+        lista_vendas = Venda.objects.filter(status='CANCELADA')
+    else:
+        lista_vendas = Venda.objects.all()
+
+    lista_vendas = lista_vendas.order_by('-data_hora')
+                                         
 
     contexto = {
-        'vendas': lista_vendas
+        'vendas': lista_vendas,
+        'filtro_status_atual': filtro_status
     }
     return render(request, 'sales/historico_vendas.html', contexto)
 

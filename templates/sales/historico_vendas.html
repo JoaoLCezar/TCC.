@@ -11,6 +11,28 @@
                 <p class="card-subtitle mb-2 text-muted">
                     Aqui estão todas as vendas registradas no sistema.
                 </p>
+                <form method="GET" action="{% url 'sales:historico_vendas' %}" class="row g-3 align-items-center mb-3">
+                    <div class="col-auto">
+                        <label for="status" class="col-form-label">Filtrar por status:</label>
+                    </div>
+                    <div class="col-auto">
+                        <select name="status" id="status" class="form-select">
+                            <option value="TODOS" {% if filtro_status_atual == 'TODOS' %}selected{% endif %}>
+                                Todos os Pedidos
+                            </option>
+                            <option value="CONCLUIDA" {% if filtro_status_atual == 'CONCLUIDA' %}selected{% endif %}>
+                                Concluídas
+                            </option>
+                            <option value="CANCELADA" {% if filtro_status_atual == 'CANCELADA' %}selected{% endif %}>
+                                Canceladas
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Filtrar</button>
+                    </div>
+                </form>
+                
                 <hr>
 
                 {% if vendas %}
