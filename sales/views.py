@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from products.models import Produto
 from django.http import JsonResponse
@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from .models import Venda, ItemVenda
 import json
+
 
 
 @login_required #obrigatorio o login
@@ -76,3 +77,25 @@ def processar_venda(request):
         return JsonResponse({'sucesso': False, 'erro': 'Dados inválidos (JSON).'}, status=400)
     except Exception as e:
         return JsonResponse({'sucesso': False, 'erro': str(e)}, status=500)
+    
+@login_required
+def historico_vendas(request):
+    lista_vendas = Venda.objects.filter(status='CONCLUIDA').order_by('-data_hora')
+
+    contexto = {
+        'vendas': lista_vendas
+    }
+    return render(request, 'sales/historico_vendas.html', contexto)
+
+@login_required
+def detalhe_venda(request, pk):
+    venda = get_object_or_404(Venda, pk=pk)
+
+    itens_da_venda = venda.itens.all()
+
+    contexto = {
+        'venda':venda,
+        'itens_da_venda': itens_da_venda,
+    }
+
+    return render(request, 'sales/detalhe_venda.html', contexto)

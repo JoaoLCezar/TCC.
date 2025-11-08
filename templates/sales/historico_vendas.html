@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Historico de Vendas - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Histórico de Vendas</h1>
+                <p class="card-subtitle mb-2 text-muted">
+                    Aqui estão todas as vendas registradas no sistema.
+                </p>
+                <hr>
+
+                {% if vendas %}
+                <table class="table table-strped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col"># Recibo</th>
+                            <th scope="col">Data e Hora</th>
+                            <th scope="col"> Vendedor</th>
+                            <th scope="col">Valor Total</th>
+                            <th scope="col">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for venda in vendas %}
+                        <tr>
+                            <td><strong>#{{ venda.pk }}</strong></td>
+
+                            <td>{{ venda.data_hora|date:"d/m/Y H:i" }}</td>
+
+                            <td>{{ venda.usuario.username }}</td>
+
+                            <td>R$ {{ venda.valor_total|floatformat:2 }}</td>
+
+                            <td>
+                                <a href="{% url 'sales:detalhe_venda' pk=venda.pk %}" class="btn btn-sm btn-outline-primary ">
+                                    Ver Detalhes
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-info text-center" role="alert">
+                    Nenhuma venda foi registrada no sistema até agora.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

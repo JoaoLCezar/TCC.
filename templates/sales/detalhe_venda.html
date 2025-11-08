@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Venda #{{ venda.pk }} - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Detalhes da Venda #{{ venda.pk }}</h1>
+                <hr>
+
+                <h3> Itens Incluídos</h3>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">Produtos</th>
+                            <th scope="col" class="text-center">Quantidade</th>
+                            <th scope="col" class="text-end">Preço Unitário</th>
+                            <th scope="col" class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in itens_da_venda %}
+                        <tr>
+                            <td>{{ item.produto.nome }}</td>
+                            <td class="text-center">{{ item.quantidate }}</td>
+                            <td class="text-end">R$ {{ item.preco_unitario|floatformat:2 }}</td>
+                            <td class="text-end">R$ {{item.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">Resumo da venda</h4>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong> ID do Recibo:</strong>
+                        <span>#{{ venda.pk }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Data e Hora:</strong>
+                        <span>{{ venda.data_hora|date:"d/m/Y h:i" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Vendedor:</strong>
+                        <span>{{ venda.usuario.username }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Status:</strong>
+                        <span class="badge bg-success">{{ venda.get_status_display }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>TOTAL:</strong>
+                        <span>{{ venda.valor_total|floatformat:2 }}</span>
+                    </li>
+                </ul>
+                <hr>
+                <a href="{% url 'sales:historico_vendas' %}" class="btn btn-secundary w-100">
+                    &larr; Voltar para o Histórico
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
