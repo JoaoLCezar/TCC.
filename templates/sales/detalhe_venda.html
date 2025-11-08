@@ -53,7 +53,13 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between">
                         <strong>Status:</strong>
-                        <span class="badge bg-success">{{ venda.get_status_display }}</span>
+                        {% if venda.status == 'CONCLUIDA' %}
+                            <span class="badge bg-success">{{ venda.get_status_display }}</span>
+                        {% elif venda.status == 'CANCELADA' %}
+                            <span class="badge bg-danger">{{ venda.get_status_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ venda.get_status_display }}</span>
+                        {% endif %}
                     </li>
                     <li class="list-group-item d-flex justify-content-between">
                         <strong>TOTAL:</strong>

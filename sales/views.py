@@ -80,7 +80,7 @@ def processar_venda(request):
     
 @login_required
 def historico_vendas(request):
-    lista_vendas = Venda.objects.filter(status='CONCLUIDA').order_by('-data_hora')
+    lista_vendas = Venda.objects.all().order_by('-data_hora')
 
     contexto = {
         'vendas': lista_vendas
