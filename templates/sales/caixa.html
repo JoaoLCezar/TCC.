@@ -28,7 +28,10 @@
 
                 <hr>
 
-                <div class="d-grid">
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-danger btn-lg" id="btn-cancelar-venda" disabled>
+                        Cancelar Venda
+                    </button>
                     <button class="btn btn-success btn-lg" id="btn-finalizar-venda" disabled>
                         Finalizar Venda
                     </button>
@@ -80,6 +83,7 @@
 
 <script>
     const PROCESSAR_VENDA_URL = "{% url 'sales:processar_venda' %}";
+    const CANCELAR_VENDA_URL = "{% url 'sales:cancelar_venda' %}";
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 </script>
 
@@ -93,6 +97,7 @@
         const totalVendaEl = document.getElementById('total-venda');
         const btnFinalizar = document.getElementById('btn-finalizar-venda');
 
+        const btnCancelar = document.getElementById('btn-cancelar-venda');
 
         listaProdutos.addEventListener('click', function(event){
             const botaoProduto = event.target.closest('.btn-add-produto');
@@ -118,19 +123,25 @@
 
             if (event.target.classList.contains('btn-adicionar-item')) {
                 const id = event.target.dataset.id;
-                // Para adicionar, podemos simplesmente chamar a função que já temos,
-                // mas precisamos de pegar os dados do carrinho (nome, preco).
+               
                 if (carrinho[id]) {
                     adicionarAoCarrinho(id, carrinho[id].nome, carrinho[id].preco);
                 }
             }
-        })
+        });
+
+        btnCancelar.addEventListener('click', function() {
+            if(confirm('Tem certeza que deseja limpar o carrinho ?')) {
+                processarCancelamento();
+            }
+        });
 
         function processarVenda() {
             console.log("Iniciando finalização de venda...");
             console.log("Carrinho a ser enviado:", carrinho);
 
             btnFinalizar.disabled = true;
+            btnCancelar.disabled = true;
             btnFinalizar.textContent = 'Processando...';
 
 
@@ -149,10 +160,11 @@
                 if (data.sucesso) {
                     alert('Venda finalizada com sucesso!');
                     carrinho = {};
-                    atualizarTelaCarrinho();
+                    location.reload();
                 } else {
                     alert('Erro ao processar a venda: ' + data.erro);
                     btnFinalizar.disabled = false;
+                    btnCancelar.disabled = false;
                     btnFinalizar.textContent = 'Finalizar Venda';
                 }
             })
@@ -160,7 +172,40 @@
                 console.error('Erro de rede:', error);
                 alert('Erro de conexão. A venda não foi finalizada.');
                 btnFinalizar.disabled = false;
+                btnCancelar.disabled = false;
                 btnFinalizar.textContent = 'Finalizar Venda';
+            });
+        }
+
+        function processarCancelamento() {
+            btnFinalizar.disabled = true;
+            btnCancelar.disabled = true;
+            btnCancelar.textContent = 'Cancelando...';
+
+            fetch(CANCELAR_VENDA_URL, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 
+                            'X-CSRFToken': csrfToken },
+                body: JSON.stringify({ carrinho: carrinho })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    alert('Venda cancelada e registada com sucesso!');
+                    location.reload(); // Limpa a tela
+                } else {
+                    alert('Erro ao registar o cancelamento: ' + data.erro);
+                    btnFinalizar.disabled = false;
+                    btnCancelar.disabled = false;
+                    btnCancelar.textContent = 'Cancelar Venda';
+                }
+            })
+            .catch(error => {
+                console.error('Erro de rede:', error);
+                alert('Erro de conexão. O cancelamento não foi registado.');
+                btnFinalizar.disabled = false;
+                btnCancelar.disabled = false;
+                btnCancelar.textContent = 'Cancelar Venda';
             });
         }
 
@@ -187,6 +232,11 @@
 
             atualizarTelaCarrinho();
         }
+        
+        function limparCarrinhoTela() {
+            carrinho = {};
+            atualizarTelaCarrinho();
+        }
 
         function atualizarTelaCarrinho() {
             listaCarrinho.innerHTML = '';
@@ -196,6 +246,7 @@
             if(idsProdutos.length === 0) {
                 listaCarrinho.appendChild(msgCarrinhoVazio);
                 btnFinalizar.disabled = true;
+                btnCancelar.disabled = true;
             } else {
                 idsProdutos.forEach(id => {
                     const item = carrinho[id];
@@ -227,6 +278,7 @@
                     listaCarrinho.appendChild(li);
                 });
                 btnFinalizar.disabled = false;
+                btnCancelar.disabled = false;
             }
 
             totalVendaEl.textContent = `R$ ${totalVenda.toFixed(2)}`;

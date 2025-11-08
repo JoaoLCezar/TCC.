@@ -99,3 +99,53 @@ def detalhe_venda(request, pk):
     }
 
     return render(request, 'sales/detalhe_venda.html', contexto)
+
+@login_required
+@require_POST
+@transaction.atomic
+def cancelar_venda(request):
+    try:
+        data = json.loads(request.body)
+        carrinho_js = data.get('carrinho')
+
+        if not carrinho_js:
+            return JsonResponse({'sucesso': False, 'erro': 'Carrinho vazio.'}, status=400)
+        
+        nova_venda = Venda.objects.create(
+            usuario=request.user,
+            status='CANCELADA'
+        )
+
+        valor_total_venda = 0
+
+        for produto_id, item_info in carrinho_js.items():
+            quantidade_vendida = item_info['quantidade']
+
+            try:
+                produto = Produto.objects.get(pk=produto_id)
+            except Produto.DoesNotExist:
+                raise Exception(f"Produto com ID {produto_id} não encontrado.")
+            
+            preco_congelado = produto.preco
+            subtotal_item = preco_congelado * quantidade_vendida
+
+            ItemVenda.objects.create(
+                venda=nova_venda,
+                produto=produto,
+                quantidade=quantidade_vendida,
+                preco_unitario=preco_congelado,
+                subtotal=subtotal_item
+            )
+
+            valor_total_venda += subtotal_item
+
+        nova_venda.valor_total = valor_total_venda
+        nova_venda.save()
+
+
+        return JsonResponse({'sucesso': True, 'mensagem': 'Venda cancelada e registrada com sucesso!'})
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'sucesso': False, 'erro': 'Dados inválidos (JSON).'}, status=400)
+    except Exception as e:
+        return JsonResponse({'sucesso': False, 'erro': str(e)}, status=500)
