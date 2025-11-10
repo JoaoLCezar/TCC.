@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Cliente - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Adicionar Novo Cliente</h1>
+                <hr>
+
+                <form method="POST" action="">
+                    {% csrf_token %}
+
+                    {{ form.as_p }}
+                    <hr>
+
+                    <button type="submit" class="btn btn-primary">
+                        Salvar Cliente
+                    </button>
+
+                    <a href="{% url 'customers:listar_clientes' %}" class="btn btn-secundary">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock  %}

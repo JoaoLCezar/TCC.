@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão - {{ cliente.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Excluir Clientes</h1>
+                <hr>
+
+                <p class="fs-5">
+                    Você tem certeza que deseja excluir permanentemente o cliente:
+                    <strong>"{{ cliente.nome }}"</strong>
+                </p>
+                <p class="text-danger">
+                    <strong> Atenção:</strong> Está ação não pode ser desfeita.
+                </p>
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <button type="submit" class="btn btn-danger me-2">
+                        Sim, excluir permanentemente
+                    </button>
+
+                    <a href="{% url 'customers:listar_clientes' %}" class="btn btn-secundary">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestão de Clientes - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h1> Gestão de Clientes</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'customers:criar_cliente' %}" class="btn btn-primary">
+                + Adicionar Novo Cliente
+            </a>            
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if clientes %}
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Nome</th>
+                            <th scope="col">E-mail</th>
+                            <th scope="col">Telefone</th>
+                            <th scope="col" class="text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cliente in clientes %}
+                        <tr>
+                            <td>{{ cliente.nome }}</td>
+                            <td>{{ cliente.email|default:"--" }}</td>
+                            <td>{{ cliente.telefone|default:"--" }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'customers:atualizar_cliente' pk=cliente.pk %}" class="btn btn-sm btn-outline-primary me-2">
+                                    Editar
+                                </a>
+                                <a href="{% url 'customers:excluir_cliente' pk=cliente.pk %}" class="btn btn-sm btn-outline-danger">
+                                    Excluir
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-info text-center" role="alert">
+                    Nenhum cliente cadastrado ainda.
+                    Clique em "Adicionar Novo Cliente" para começar.
+                </div>
+            {% endif %}    
+        </div>
+    </div>
+</div>
+{% endblock %}
