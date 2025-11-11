@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão - {{ fornecedor.nome_fantasia }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Excluir Fornecedor</h1>
+                <hr>
+
+                <p class="fs-5">
+                    Você tem certeza que deseja excluir permanentemente o fornecedor: 
+                    <strong>"{{ fornecedor.nome_fantasia }}"</strong>?
+                </p>
+                <p class="text-danger">
+                    <strong>Atenção:</strong> Esta ação não pode ser desfeita.
+                    (Se houver produtos ou notas de entrada associados a ele no futuro,
+                    esta ação pode ser bloqueada para proteger o histórico.)
+                </p>
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <button type="submit" class="btn btn-danger me-2">
+                        Sim, excluir permanentemente
+                    </button>
+
+                    <a href="{% url 'suppliers:listar_fornecedores' %}" class="btn btn-secundary">
+                        Cancelar    
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
