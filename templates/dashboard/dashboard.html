@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1>Dashboard</h1>
+            <h5 class="text-muted">Bem-vindo(a) de volta, {{ request.user.username }}!</h5>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total Vendido Hoje</h5>
+                    <p class="card-text fs-3">
+                        R$ {{ total_vendido_hoje|floatformat:2 }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body">
+                    <h5 class="card-title"> Vendas Realizadas Hoje</h5>
+                    <p class="card-text fs-3">
+                        {{ total_vendas_hoje }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card text-dark bg-light h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Produtos Cadastrados</h5>
+                    <p class="card-text fs-3">
+                        {{ total_produtos_cadastrados }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-4">
+    
+   <div class="row">
+        <div class="col-md-12">
+            <h2>Acesso Rápido</h2>
+        </div>
+        
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Operação de Caixa</h5>
+                    <p class="card-text">Iniciar uma nova venda no PDV.</p>
+                    <a href="{% url 'sales:operacao_caixa' %}" class="btn btn-primary">Iniciar Caixa</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Gestão de Produtos</h5>
+                    <p class="card-text">Adicionar, editar e ver o estoque.</p>
+                    <a href="{% url 'products:listar_produtos' %}" class="btn btn-outline-secondary">Ver Produtos</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Histórico de Vendas</h5>
+                    <p class="card-text">Ver todas as vendas concluídas e canceladas.</p>
+                    <a href="{% url 'sales:historico_vendas' %}" class="btn btn-outline-secondary">Ver Histórico</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock content %}
