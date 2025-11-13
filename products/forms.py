@@ -1,5 +1,5 @@
 from django import forms
-from .models import Produto
+from .models import Produto, MovimentoEstoque
 
 class ProdutoForm(forms.ModelForm):
     class Meta:
@@ -12,3 +12,23 @@ class ProdutoForm(forms.ModelForm):
             'preco': forms.NumberInput(attrs={'class': 'form-control'}),
             'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+
+
+class MovimentoEstoqueForm(forms.ModelForm):
+
+    class Meta:
+        model = MovimentoEstoque
+
+        fields = ['quantidade', 'tipo', 'motivo']
+
+        widgets = {
+            'quantidade': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Ex: 50 ou -5'
+            }),
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'motivo': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Ex: Reposição, Ajuste'
+            }),
+        }    

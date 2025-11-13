@@ -3,6 +3,19 @@
 {% block title %}{{ produto.nome }} - Detalhes do Produto{% endblock %}
 
 {% block content %}
+{% if messages %}
+
+    <div class="row">
+        <div class="col-md-12">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
 <div class="row">
     <div class="col-lg-8">
         <div class="card">
@@ -26,11 +39,15 @@
                     Editar Produto
                 </a>
 
+                <a href="{% url 'products:historico_movimentos' pk=produto.pk %}" class="btn btn-info me-2">
+                    Histórico de Estoque
+                </a>
+
                 <a href="{% url 'products:excluir_produto' pk=produto.pk %}" class="btn btn-danger me-2">
                     Excluir
                 </a>
                 
-                <a href="{% url 'products:listar_produtos' %}" class="btn btn-secondary">
+                <a href="{% url 'products:listar_produtos' %}" class="btn btn-secondary mt-3">
                     &larr; Voltar para a lista
                 </a>
             </div>
@@ -38,6 +55,26 @@
     </div>
 
     <div class="col-lg-4">
+        <div class="card bg-light mt-4">
+        <div class="card-body">
+            <h4 class="card-title">Ajuste de Estoque</h4>
+            <p class="card-subtitle mb-2 text-muted">
+                Registe entradas ou perdas.
+            </p>
+            <hr>
+            <form method="POST" action="">
+                {% csrf_token %}
+                
+                {{ form_estoque.as_p }}
+                
+                <div class="d-grid mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        Registar Movimento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
         <div class="card bg-light">
             <div class="card-body">
                 <h4 class="card-title">Informações Rápidas</h4>

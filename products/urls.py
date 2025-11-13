@@ -16,5 +16,8 @@ urlpatterns = [
 
     #Rota para Excluir produto
     path('<int:pk>/excluir/', views.excluir_produto, name='excluir_produto'),
-]
+
+    path('<int:pk>/movimentos/', views.historico_movimentos, name='historico_movimentos'),
+    
+    ]
 

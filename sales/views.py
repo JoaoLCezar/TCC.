@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from products.models import Produto
+from products.models import Produto, MovimentoEstoque
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import transaction
@@ -51,6 +51,15 @@ def processar_venda(request):
             
             produto.estoque -= quantidade_vendida
             produto.save()
+
+            #Registro da saida do livro de registro
+            MovimentoEstoque.objects.create(
+                produto=produto,
+                quantidade = -quantidade_vendida,
+                tipo='SAIDA_VENDA',
+                usuario=request.user,
+                motivo=f"Venda PDV #{nova_venda.pk}"
+            )
 
             preco_congelado = produto.preco
             subtotal_item = preco_congelado * quantidade_vendida
@@ -130,6 +139,7 @@ def cancelar_venda(request):
 
         for produto_id, item_info in carrinho_js.items():
             quantidade_vendida = item_info['quantidade']
+
 
             try:
                 produto = Produto.objects.get(pk=produto_id)

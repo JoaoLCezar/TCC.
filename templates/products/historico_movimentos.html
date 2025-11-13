@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Histórico de Estoque - {{ produto.nome }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Histórico de Movimentações</h1>
+                <h3 class="card-subtitle mb-3 text-muted">{{ produto.nome }}</h3>
+                
+                <div class="alert alert-info">
+                    Estoque Atual: <strong>{{ produto.estoque }}</strong> unidades.
+                </div>
+                
+                <hr>
+
+                {% if movimentos %}
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">Data e Hora</th>
+                                <th scope="col">Tipo de Movimento</th>
+                                <th scope="col" class="text-center">Quantidade</th>
+                                <th scope="col">Utilizador</th>
+                                <th scope="col">Detalhes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movimento in movimentos %}
+                            <tr>
+                                <td>{{ movimento.data_hora|date:"d/m/Y H:i" }}</td>
+                                
+                                <td>{{ movimento.get_tipo_display }}</td>
+                                
+                                <td class="text-center">
+                                    {% if movimento.quantidade > 0 %}
+                                        <strong class="text-success">+{{ movimento.quantidade }}</strong>
+                                    {% else %}
+                                        <strong class="text-danger">{{ movimento.quantidade }}</strong>
+                                    {% endif %}
+                                </td>
+                                
+                                <td>{{ movimento.usuario.username|default:"Sistema" }}</td>
+                                
+                                <td>{{ movimento.motivo|default:"--" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="alert alert-secondary text-center" role="alert">
+                        Nenhuma movimentação de estoque foi registada para este produto ainda.
+                    </div>
+                {% endif %}
+
+                <hr>
+                <a href="{% url 'products:detalhe_produto' pk=produto.pk %}" class="btn btn-secondary">
+                    &larr; Voltar para os Detalhes do Produto
+                </a>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
