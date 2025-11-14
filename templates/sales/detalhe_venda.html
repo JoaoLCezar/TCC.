@@ -16,17 +16,17 @@
                         <tr>
                             <th scope="col">Produtos</th>
                             <th scope="col" class="text-center">Quantidade</th>
-                            <th scope="col" class="text-end">Preço Unitário</th>
-                            <th scope="col" class="text-end">Subtotal</th>
+                            <th scope="col" class="text-center">Preço Unitário</th>
+                            <th scope="col" class="text-center">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in itens_da_venda %}
                         <tr>
                             <td>{{ item.produto.nome }}</td>
-                            <td class="text-center">{{ item.quantidate }}</td>
-                            <td class="text-end">R$ {{ item.preco_unitario|floatformat:2 }}</td>
-                            <td class="text-end">R$ {{item.subtotal|floatformat:2 }}</td>
+                            <td class="text-center">{{ item.quantidade }}</td>
+                            <td class="text-center">R$ {{ item.preco_unitario|floatformat:2 }}</td>
+                            <td class="text-center">R$ {{item.subtotal|floatformat:2 }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
