@@ -5,21 +5,28 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import transaction
 from .models import Venda, ItemVenda
+from core.decorators import group_required
+from customers.models import Cliente
 import json
 
 
 
 @login_required #obrigatorio o login
+@group_required('Gerentes', 'Vendedores')
 def operacao_caixa(request):
     produtos_disponiveis = Produto.objects.all().order_by('nome')
 
+    clientes_cadastrados = Cliente.objects.all().order_by('nome')
+
     contexto = {
         'lista_de_produtos': produtos_disponiveis,
+        'lista_de_clientes': clientes_cadastrados,
     }
 
     return render(request, 'sales/caixa.html', contexto)
 
 @login_required
+@group_required('Gerentes', 'Vendedores')
 @require_POST   
 @transaction.atomic
 def processar_venda(request):
@@ -27,12 +34,22 @@ def processar_venda(request):
         data = json.loads(request.body)
         carrinho_js = data.get('carrinho')
 
+        cliente_id = data.get('cliente_id')
+
         if not carrinho_js:
             return JsonResponse({'sucesso': False, 'erro': 'Carrinho vazio'}, status=400)
         
+        cliente_obj = None 
+        if cliente_id: 
+            try:
+                cliente_obj = Cliente.objects.get(pk=cliente_id)
+            except Cliente.DoesNotExist:
+                return JsonResponse({'sucesso': False, 'erro': 'Cliente selecionado não foi encontrado.'}, status=404)
+        
         nova_venda = Venda.objects.create(
             usuario = request.user,
-            status='CONCLUIDA'
+            status='CONCLUIDA',
+            cliente=cliente_obj
         )
 
         valor_total_venda = 0
@@ -88,6 +105,7 @@ def processar_venda(request):
         return JsonResponse({'sucesso': False, 'erro': str(e)}, status=500)
     
 @login_required
+@group_required('Gerentes')
 def historico_vendas(request):
     filtro_status = request.GET.get('status','TODOS')
     if filtro_status == 'CONCLUIDA':
@@ -120,6 +138,7 @@ def detalhe_venda(request, pk):
     return render(request, 'sales/detalhe_venda.html', contexto)
 
 @login_required
+@group_required('Gerentes', 'Vendedores')
 @require_POST
 @transaction.atomic
 def cancelar_venda(request):
@@ -127,12 +146,22 @@ def cancelar_venda(request):
         data = json.loads(request.body)
         carrinho_js = data.get('carrinho')
 
+        cliente_id = data.get('cliente_id')
+
         if not carrinho_js:
             return JsonResponse({'sucesso': False, 'erro': 'Carrinho vazio.'}, status=400)
         
+        cliente_obj = None 
+        if cliente_id:
+            try:
+                cliente_obj = Cliente.objects.get(pk=cliente_id)
+            except Cliente.DoesNotExist:
+                return JsonResponse({'sucesso': False, 'erro': 'Cliente selecionado não foi encontrado.'}, status=404)
+        
         nova_venda = Venda.objects.create(
             usuario=request.user,
-            status='CANCELADA'
+            status='CANCELADA',
+            cliente=cliente_obj
         )
 
         valor_total_venda = 0

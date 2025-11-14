@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from products.models import Produto
+from customers.models import Cliente
 
 # Create your models here.
 class Venda(models.Model):
@@ -35,6 +36,14 @@ class Venda(models.Model):
         blank=True,
         related_name='vendas',
         verbose_name="Vendedor"
+    )
+
+    cliente = models.ForeignKey(
+        Cliente,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='compras'
     )
 
     class Meta:

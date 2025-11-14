@@ -1,7 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404,get_list_or_404
+from django.contrib.auth.decorators import login_required
 from .models import Categoria
 from .forms import CategoriaForm
+from core.decorators import group_required
 
+
+@login_required
+@group_required('Gerentes')
 def listar_categorias(request):
     categorias = Categoria.objects.all()
 
@@ -11,6 +16,9 @@ def listar_categorias(request):
 
     return render(request, 'categories/lista_categorias.html', contexto)
 
+
+@login_required
+@group_required('Gerentes')
 def criar_categoria(request):
     if request.method == 'POST':
         form = CategoriaForm(request.POST)
@@ -28,6 +36,9 @@ def criar_categoria(request):
     }
     return render(request, 'categories/form_categoria.html', context)
 
+
+@login_required
+@group_required('Gerentes')
 def atualizar_categoria(request, pk):
     categoria = get_object_or_404(Categoria, pk = pk)
 
@@ -48,6 +59,8 @@ def atualizar_categoria(request, pk):
     return render(request, 'categories/form_categoria.html', context)
 
 
+@login_required
+@group_required('Gerentes')
 def excluir_categoria(request, pk):
     categoria = get_object_or_404(Categoria, pk = pk)
 

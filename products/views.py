@@ -4,9 +4,11 @@ from django.db import transaction
 from django.contrib import messages
 from .models import Produto, MovimentoEstoque
 from .forms import ProdutoForm, MovimentoEstoqueForm
+from core.decorators import group_required
 
-# Create your views here.
 
+@login_required
+@group_required('Gerentes')
 def listar_produtos(request):
     
     produtos = Produto.objects.all().order_by('nome') #Puxa os objetos do banco e ordena por nome
@@ -20,6 +22,7 @@ def listar_produtos(request):
 
 
 @login_required
+@group_required('Gerentes')
 def detalhe_produto(request, pk):
     # Esta função busca um único produto no banco de dados pelo seu ID.
     # Se não for encontrado ela  retorna uma página de Erro 404.
@@ -63,6 +66,8 @@ def detalhe_produto(request, pk):
     return render(request, 'products/detalhe_produtos.html', contexto)
 
 
+@login_required
+@group_required('Gerentes')
 def criar_produto(request):
     if request.method =='POST':
         form = ProdutoForm(request.POST)
@@ -80,6 +85,8 @@ def criar_produto(request):
     return render(request, 'products/form_produtos.html', context)
 
 
+@login_required
+@group_required('Gerentes')
 def atualizar_produto(request, pk):
     produto = get_object_or_404(Produto, pk=pk)
 
@@ -99,6 +106,8 @@ def atualizar_produto(request, pk):
     }
     return render(request, 'products/form_produtos.html', context)
     
+@login_required
+@group_required('Gerentes')
 def excluir_produto(request, pk):
     produto = get_object_or_404(Produto, pk=pk)
 
@@ -114,6 +123,7 @@ def excluir_produto(request, pk):
 
 
 @login_required
+@group_required('Gerentes')
 def historico_movimentos(request, pk):
     produto = get_object_or_404(Produto, pk=pk)
 

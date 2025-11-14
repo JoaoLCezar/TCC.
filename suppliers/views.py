@@ -2,8 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Fornecedor
 from .forms import FornecedorForm
+from core.decorators import group_required
+
 
 @login_required
+@group_required('Gerentes')
 def listar_fornecedores(request):
     lista_de_fornecedores = Fornecedor.objects.all()
 
@@ -15,6 +18,7 @@ def listar_fornecedores(request):
 
 
 @login_required
+@group_required('Gerentes')
 def criar_fornecedor(request):
     if request.method == 'POST':
         form = FornecedorForm(request.POST)
@@ -34,6 +38,7 @@ def criar_fornecedor(request):
     return render(request, 'suppliers/form_fornecedor.html', contexto)
 
 @login_required
+@group_required('Gerentes')
 def atualizar_fornecedor(request, pk):
     fornecedor = get_object_or_404(Fornecedor, pk=pk)
 
@@ -55,6 +60,7 @@ def atualizar_fornecedor(request, pk):
 
 
 @login_required
+@group_required('Gerentes')
 def excluir_fornecedor(request, pk):
     fornecedor = get_object_or_404(Fornecedor, pk=pk)
 

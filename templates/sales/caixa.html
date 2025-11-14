@@ -11,6 +11,16 @@
 
                 {% csrf_token %}
 
+                <div class="mb-3">
+                   <label for="cliente-search-input" class="form-label"><strong>Associar Cliente (Pesquisar por Nome ou CPF/CNPJ)</strong></label>
+                                
+                    <input type="search" id="cliente-search-input" class="form-control" placeholder="Digite 2+ letras para pesquisar..." autocomplete="off">
+                                
+                    <input type="hidden" id="cliente-id-selecionado" value="">
+                                
+                    <div class="list-group position-absolute" id="cliente-resultados" style="display: none;">
+                        </div>
+                </div>
                 <hr>
 
                 <ul class="list-group" id="lista-carrinho">
@@ -44,6 +54,11 @@
         <div class="card">
             <div class="card-body">
                 <h3 class="card-title">Selecionar Produtos</h3>
+                <div class="d-grid mb-3">
+                    <a href="{% url 'customers:criar_cliente' %}" class="btn btn-outline-primary">
+                        + Cadastrar Novo Cliente
+                    </a>
+                </div>
                 
                 <hr>
 
@@ -84,6 +99,10 @@
 <script>
     const PROCESSAR_VENDA_URL = "{% url 'sales:processar_venda' %}";
     const CANCELAR_VENDA_URL = "{% url 'sales:cancelar_venda' %}";
+    const clienteSelectEl = document.getElementById('cliente-selecionado');
+
+    const BUSCAR_CLIENTES_URL = "{% url 'customers:api_buscar_clientes' %}";
+
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 </script>
 
@@ -96,8 +115,11 @@
         const msgCarrinhoVazio = document.getElementById('carrinho-vazio-msg');
         const totalVendaEl = document.getElementById('total-venda');
         const btnFinalizar = document.getElementById('btn-finalizar-venda');
-
         const btnCancelar = document.getElementById('btn-cancelar-venda');
+
+        const clienteSearchInput = document.getElementById('cliente-search-input');
+        const clienteResultadosDiv = document.getElementById('cliente-resultados');
+        const clienteIdInput = document.getElementById('cliente-id-selecionado');
 
         listaProdutos.addEventListener('click', function(event){
             const botaoProduto = event.target.closest('.btn-add-produto');
@@ -136,6 +158,68 @@
             }
         });
 
+        clienteSearchInput.addEventListener('input', function() {
+            const termo = clienteSearchInput.value;
+
+            clienteIdInput.value = "";
+
+            if (termo.length < 2) {
+                clienteResultadosDiv.innerHTML = '';
+                clienteResultadosDiv.style.display = 'none';
+                return;
+            }
+
+            fetch (`${BUSCAR_CLIENTES_URL}?term=${termo}`)
+            .then(response => response.json())
+            .then(clientes => {
+                mostrarResultadosClientes(clientes);
+            });
+        });
+
+        function mostrarResultadosClientes(clientes) {
+            clienteResultadosDiv.innerHTML = '';
+
+            const anonimo = document.createElement('a');
+            anonimo.className = 'list-group-item list-group-item-action resultado-cliente';
+            anonimo.href = '#';
+            anonimo.dataset.id = '';
+            anonimo.dataset.nome = 'Venda Anónima (Sem cliente)';
+            anonimo.textContent = 'Venda Anónima (Sem cliente)';
+            clienteResultadosDiv.appendChild(anonimo);
+
+            if (clientes.length > 0) {
+                clientes.forEach(cliente => {
+                    const item = document.createElement('a');
+                    item.className = 'list-group-item list-group-item-action resultado-cliente';
+                    item.href = '#';
+                    item.dataset.id = cliente.id; // Guarda o ID no 'data-id'
+                    item.dataset.nome = cliente.nome; // Guarda o nome
+
+                    // Mostra o nome e o documento
+                    item.innerHTML = `<strong>${cliente.nome}</strong><br><small>${cliente.documento || 'Sem documento'}</small>`;
+                    clienteResultadosDiv.appendChild(item);
+                });
+            }
+
+            clienteResultadosDiv.style.display = 'block'; // Mostra a caixa
+        }
+
+        clienteResultadosDiv.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            const itemSelecionado = event.target.closest('.resultado-cliente');
+            if (itemSelecionado) {
+                // Coloca o ID no input escondido
+                clienteIdInput.value = itemSelecionado.dataset.id;
+                // Coloca o NOME no input visível
+                clienteSearchInput.value = itemSelecionado.dataset.nome;
+                
+                // Esconde os resultados
+                clienteResultadosDiv.innerHTML = '';
+                clienteResultadosDiv.style.display = 'none';
+            }
+        });
+
         function processarVenda() {
             console.log("Iniciando finalização de venda...");
             console.log("Carrinho a ser enviado:", carrinho);
@@ -144,6 +228,7 @@
             btnCancelar.disabled = true;
             btnFinalizar.textContent = 'Processando...';
 
+            const clienteId = clienteIdInput.value;
 
             fetch(PROCESSAR_VENDA_URL, {
                 method: 'POST',
@@ -152,7 +237,8 @@
                     'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify({
-                    carrinho: carrinho
+                    carrinho: carrinho,
+                    cliente_id: clienteId
                 })
             })
             .then(response => response.json())
@@ -181,12 +267,13 @@
             btnFinalizar.disabled = true;
             btnCancelar.disabled = true;
             btnCancelar.textContent = 'Cancelando...';
+            const clienteId = clienteIdInput.value;
 
             fetch(CANCELAR_VENDA_URL, { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 
                             'X-CSRFToken': csrfToken },
-                body: JSON.stringify({ carrinho: carrinho })
+                body: JSON.stringify({ carrinho: carrinho, cliente_id: clienteId })
             })
             .then(response => response.json())
             .then(data => {
@@ -287,4 +374,17 @@
     });
 
 </script>
+
+<style>
+    #cliente-resultados {
+        /* Garante que os resultados flutuam por cima do conteúdo abaixo */
+        position: absolute; 
+        z-index: 1000;
+        width: 95%; /* Ajuste conforme necessário */
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+    }
+</style>
+
 {% endblock scripts %}
