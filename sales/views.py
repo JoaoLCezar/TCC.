@@ -1,12 +1,15 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from products.models import Produto, MovimentoEstoque
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import transaction
-from .models import Venda, ItemVenda
+from .models import Venda, ItemVenda, SessaoCaixa
 from core.decorators import group_required
 from customers.models import Cliente
+from .forms import SessaoCaixaForm, SessaoCaixaFechamentoForm
+from django.utils import timezone
+from django.contrib import messages
 import json
 
 
@@ -14,6 +17,15 @@ import json
 @login_required #obrigatorio o login
 @group_required('Gerentes', 'Vendedores')
 def operacao_caixa(request):
+    try:
+        sessao_aberta = SessaoCaixa.objects.get(
+            usuario=request.user, 
+            status='ABERTO'
+        )
+    except SessaoCaixa.DoesNotExist:
+        messages.error(request, 'Nenhum caixa aberto. Por favor, abra um novo caixa para iniciar as vendas.')
+        return redirect('sales:abrir_caixa')
+    
     produtos_disponiveis = Produto.objects.all().order_by('nome')
 
     clientes_cadastrados = Cliente.objects.all().order_by('nome')
@@ -21,6 +33,7 @@ def operacao_caixa(request):
     contexto = {
         'lista_de_produtos': produtos_disponiveis,
         'lista_de_clientes': clientes_cadastrados,
+        'sessao_aberta': sessao_aberta,
     }
 
     return render(request, 'sales/caixa.html', contexto)
@@ -31,6 +44,12 @@ def operacao_caixa(request):
 @transaction.atomic
 def processar_venda(request):
     try:
+        try:
+            sessao_aberta = SessaoCaixa.objects.get(usuario=request.user, status='ABERTO')
+        except SessaoCaixa.DoesNotExist:
+            return JsonResponse({'sucesso': False, 'erro': 'Sessão de caixa não encontrada ou fechada.'}, status=400)
+        
+
         data = json.loads(request.body)
         carrinho_js = data.get('carrinho')
 
@@ -49,7 +68,8 @@ def processar_venda(request):
         nova_venda = Venda.objects.create(
             usuario = request.user,
             status='CONCLUIDA',
-            cliente=cliente_obj
+            cliente=cliente_obj,
+            sessao=sessao_aberta
         )
 
         valor_total_venda = 0
@@ -143,6 +163,12 @@ def detalhe_venda(request, pk):
 @transaction.atomic
 def cancelar_venda(request):
     try:
+        try:
+            sessao_aberta = SessaoCaixa.objects.get(usuario=request.user, status='ABERTO')
+        except SessaoCaixa.DoesNotExist:
+            return JsonResponse({'sucesso': False, 'erro': 'Sessão de caixa não encontrada ou fechada.'}, status=400)
+        
+
         data = json.loads(request.body)
         carrinho_js = data.get('carrinho')
 
@@ -161,7 +187,8 @@ def cancelar_venda(request):
         nova_venda = Venda.objects.create(
             usuario=request.user,
             status='CANCELADA',
-            cliente=cliente_obj
+            cliente=cliente_obj,
+            sessao=sessao_aberta
         )
 
         valor_total_venda = 0
@@ -198,3 +225,77 @@ def cancelar_venda(request):
         return JsonResponse({'sucesso': False, 'erro': 'Dados inválidos (JSON).'}, status=400)
     except Exception as e:
         return JsonResponse({'sucesso': False, 'erro': str(e)}, status=500)
+    
+
+@login_required
+@group_required('Gerentes', 'Vendedores')
+def abrir_caixa(request):
+    sessao_existente = SessaoCaixa.objects.filter(usuario=request.user, status='ABERTO').first()
+    if sessao_existente:
+        messages.warning(request, 'Você já possui um caixa aberto. Redirecionado para o PDV.')
+        return redirect('sales:operacao_caixa')
+
+    if request.method == 'POST':
+        form = SessaoCaixaForm(request.POST)
+        if form.is_valid():
+            sessao = form.save(commit=False)
+
+            sessao.usuario = request.user
+            sessao.status = 'ABERTO'
+
+            sessao.save()
+
+            messages.success(request, f"Caixa aberta com sucesso com R$ {sessao.valor_inicial}!")
+
+            return redirect('sales:operacao_caixa')
+        
+    else:
+        form = SessaoCaixaForm()
+
+    contexto = {
+        'form': form
+    }
+
+    return render(request, 'sales/abrir_caixa.html', contexto)
+
+@login_required
+@group_required('Gerentes', 'Vendedores')
+def fechar_caixa(request):
+    try:
+        sessao_aberta = SessaoCaixa.objects.get(
+            usuario=request.user,
+            status='ABERTO'
+        )
+    except SessaoCaixa.DoesNotExist:
+        # Se não tiver um caixa aberto, não há nada para fechar.
+        messages.error(request, 'Você não possui um caixa aberto para fechar.')
+        return redirect('dashboard') # Manda de volta para o Dashboard
+    
+    if request.method =='POST':
+        form = SessaoCaixaFechamentoForm(request.POST)
+
+        if form.is_valid():
+            fechamento = form.save(commit=False)
+
+            # Atualiza a sessão que encontrámos
+            sessao_aberta.status = 'FECHADO'
+            sessao_aberta.data_fechamento = timezone.now() # Define a hora atual
+            sessao_aberta.valor_final_informado = fechamento.valor_final_informado
+
+            sessao_aberta.save()
+
+            # Envia uma mensagem de sucesso
+            messages.success(request, f"Caixa (Sessão #{sessao_aberta.pk}) fechado com sucesso!")
+            
+            # Redireciona o utilizador para o Dashboard
+            return redirect('dashboard')
+        
+    else:
+        form = SessaoCaixaFechamentoForm()
+
+    contexto = {
+        'form': form,
+        'sessao_aberta': sessao_aberta
+    }
+    
+    return render(request, 'sales/fechar_caixa.html', contexto)

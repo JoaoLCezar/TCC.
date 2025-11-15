@@ -20,29 +20,44 @@
                 <ul class="navbar-nav">
 
                     {% if user.is_authenticated %}
+                        {% if sessao_caixa_aberta %}
                         <li class="nav-item">
-                            <span class="navbar-text text-white me-3">
+                            <a class="btn btn-warning me-4" href="{% url 'sales:fechar_caixa' %}">
+                                Fechar Caixa
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <span class="navbar-text text-white me-4">
                                 Olá, {{ user.username }}
                             </span>
                         </li>
                         <li class="nav-item">
                            <form action="{% url 'logout' %}" method="POST" class="d-inline">
                                 {% csrf_token %}
-                                
-                                <button type="submit" class="btn btn-outline-light">Sair</button>
+                                <button type="submit" class="btn btn-outline-light me-4">Sair</button>
                             </form>
                         </li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="btn btn-outline-light" href="{% url 'login' %}">Entrar</a>
-                        </li>
-                    {% endif %}
+                        {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
     <main class="container mt-4">
+        {% if messages %}
+            <div class="row">
+                <div class="col-md-12">
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
         {% block content %}
         {% endblock %}
     </main>

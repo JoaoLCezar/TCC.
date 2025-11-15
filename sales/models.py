@@ -2,13 +2,85 @@ from django.db import models
 from django.contrib.auth.models import User
 from products.models import Produto
 from customers.models import Cliente
+from django.utils import timezone
 
-# Create your models here.
+
+class SessaoCaixa(models.Model):
+    STATUS_CHOICE = [
+        ('ABERTO', 'Aberto'),
+        ('FECHADO', 'Fechado'),
+    ]
+
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT, # Protege o histórico
+        related_name="sessoes_caixa",
+        verbose_name="Operador"
+    )
+
+    data_abertura = models.DateTimeField(
+        default=timezone.now, # Define a hora atual quando é criado
+        verbose_name="Data de Abertura"
+    )
+
+    valor_inicial = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        verbose_name="Valor Inicial (Suprimento)"
+    )
+
+    
+    data_fechamento = models.DateTimeField(   # Estes campos começam vazios (nulos)
+        null=True, 
+        blank=True,
+        verbose_name="Data de Fechamento"
+    )
+
+    valor_final_informado = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True, 
+        verbose_name="Valor Final (Informado pelo Operador)"
+    )
+
+    status = models.CharField(
+        max_length=10, 
+        choices=STATUS_CHOICE, 
+        default='ABERTO'
+    )
+
+    class Meta:
+        ordering = ['-data_abertura']
+        verbose_name = "Sessão de Caixa"
+        verbose_name_plural = "Sessões de Caixa"
+
+    def __str__(self):
+        # Ex: "Sessão #1 (admin) - 08/11/2025"
+        return f"Sessão #{self.pk} ({self.usuario.username}) - {self.data_abertura.strftime('%d/%m/%Y')}"
+
+
 class Venda(models.Model):
     STATUS_CHOICES = [
         ('CONCLUIDA', 'Concluida'),
         ('CANCELADA', 'Cancelada'),
     ]
+
+    data_hora = models.DateTimeField(auto_now_add=True)
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='CONCLUIDA')
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='vendas', verbose_name="Vendedor")
+    cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='compras')
+    
+
+    sessao = models.ForeignKey(
+        SessaoCaixa,
+        on_delete=models.PROTECT,
+        related_name="vendas_na_sessao",
+        null=True,
+        blank=True
+    )
+
 
     data_hora = models.DateTimeField(
         auto_now_add= True,

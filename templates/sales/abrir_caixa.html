@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Abrir Caixa - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset md-3">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title text-center">Abrir Caixa</h1>
+                <hr>
+                <p class="text-muted text-center">
+                    Insira o valor inicial (suprimento/troco)
+                    para iniciar a sessão de vendas.
+                </p>
+
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+
+                    <hr>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            Abrir Caixa e Iniciar Vendas
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

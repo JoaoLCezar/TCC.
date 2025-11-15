@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Fechar Caixa - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title text-center">Fechar Caixa</h1>
+                <hr>
+                
+                <div class="alert alert-info">
+                    <p class="mb-1">
+                        <strong>Sessão a fechar:</strong> #{{ sessao_aberta.pk }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Operador:</strong> {{ sessao_aberta.usuario.username }}
+                    </p>
+                    <p class="mb-0">
+                        <strong>Valor Inicial (Suprimento):</strong> R$ {{ sessao_aberta.valor_inicial|floatformat:2 }}
+                    </p>
+                </div>
+
+                <p class="text-muted">
+                    Por favor, conte todo o dinheiro na gaveta (incluindo o suprimento inicial) 
+                    e insira o valor total contado abaixo.
+                </p>
+                
+                <form method="POST" action="">
+                    
+                    {% csrf_token %}
+
+                    {{ form.as_p }}
+                    
+                    <hr>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            Confirmar e Fechar Caixa
+                        </button>
+                    </div>
+                </form>
+
+                <div class="d-grid mt-2">
+                    <a href="{% url 'sales:operacao_caixa' %}" class="btn btn-secondary">
+                        Cancelar (Voltar ao Caixa)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
