@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório da Sessão #{{ sessao.pk }} - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">Relatório de Fecho de Caixa</h1>
+                <h3 class="card-subtitle mb-3 text-muted">Sessão #{{ sessao.pk }}</h3>
+
+                <p>
+                    <strong>Operador:</strong> {{ sessao.usuario.username }}<br>
+                    <strong>Abertura:</strong> {{ sessao.data_abertura|date:"d/m/Y H:i" }}<br>
+                    <strong>Fechamento:</strong> {{ sessao.data_fechamento|date:"d/m/Y H:i" }}
+                </p>
+
+                <hr>
+
+                <h4 class="mb-3">Resumo Financeiro</h4>
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr class="table-light">
+                            <td>(+) Valor Inicial (Suprimento)</td>
+                            <td class="text-end">R$ {{ sessao.valor_inicial|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="table-light">
+                            <td>(+) Total Vendido (Vendas Concluídas)</td>
+                            <td class="text-end">R$ {{ total_vendido|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>(=) Valor Esperado no Caixa</strong></td>
+                            <td class="text-end"><strong>R$ {{ valor_esperado|floatformat:2 }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>(-) Valor Final (Contado na Gaveta)</td>
+                            <td class="text-end">R$ {{ sessao.valor_final_informado|floatformat:2 }}</td>
+                        </tr>
+
+                        {% if diferenca == 0 %}
+                        <tr class="table-success">
+                            <td><strong>(=) Diferença (Quebra)</strong></td>
+                            <td class="text-end"><strong>R$ 0,00</strong></td>
+                            {% elif diferenca > 0 %}
+                        <tr class="table-success">
+                            <td><strong>(=) Diferença (Sobra)</strong></td>
+                            <td class="text-end"><strong>+ R$ {{ diferenca|floatformat:2 }}</strong></td>
+                            {% else %}
+                        <tr class="table-danger">
+                            <td><strong>(=) Diferença (Quebra)</strong></td>
+                            <td class="text-end"><strong>- R$ {{ diferenca|floatformat:2|cut:"-" }}</strong></td>
+                            {% endif %}
+
+                    </tbody>
+                </table>
+
+                <h4 class="mt-4 mb-3">Resumo Operacional</h4>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        Total de Vendas Concluídas:
+                        <span>{{ vendas_concluidas_lista.count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        Total de Vendas Canceladas:
+                        <span>{{ vendas_canceladas_count }}</span>
+                    </li>
+                </ul>
+
+                <hr class="my-4">
+
+                <a href="{% url 'sales:gerar_relatorio_pdf' pk=sessao.pk %}" class="btn btn-primary">
+                    Gerar PDF
+                </a>
+
+                <a href="{% url 'sales:historico_vendas' %}" class="btn btn-secondary">
+                    &larr; Voltar para o Histórico
+                </a>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

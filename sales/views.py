@@ -1,3 +1,7 @@
+import io
+from django.http import FileResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from products.models import Produto, MovimentoEstoque
@@ -10,6 +14,7 @@ from customers.models import Cliente
 from .forms import SessaoCaixaForm, SessaoCaixaFechamentoForm
 from django.utils import timezone
 from django.contrib import messages
+from django.db.models import Sum, Count
 import json
 
 
@@ -299,3 +304,136 @@ def fechar_caixa(request):
     }
     
     return render(request, 'sales/fechar_caixa.html', contexto)
+
+@login_required
+@group_required('Gerentes')
+def relatorio_sessao(request,pk):
+    sessao = get_object_or_404(SessaoCaixa, pk=pk)
+
+    vendas_concluidas = Venda.objects.filter(
+        sessao=sessao, 
+        status='CONCLUIDA'
+    )
+
+    vendas_canceladas_count = Venda.objects.filter(
+        sessao=sessao, 
+        status='CANCELADA'
+    ).count()
+
+    total_vendido = vendas_concluidas.aggregate(
+        total=Sum('valor_total')
+    )['total'] or 0
+
+    valor_inicial = sessao.valor_inicial
+    valor_final_informado = sessao.valor_final_informado or 0
+
+    valor_esperado = valor_inicial + total_vendido
+
+    diferenca = valor_final_informado - valor_esperado
+
+    contexto = {
+        'sessao': sessao,
+        'vendas_concluidas_lista': vendas_concluidas,
+        'vendas_canceladas_count': vendas_canceladas_count,
+        'total_vendido': total_vendido,
+        'valor_esperado': valor_esperado,
+        'diferenca': diferenca,
+    }
+
+    return render(request, 'sales/relatorio_sessao.html', contexto)
+
+@login_required
+@group_required('Gerentes') # Apenas Gerentes devem ver o histórico financeiro
+def listar_sessoes(request):
+    """
+    Lista todas as sessões de caixa (histórico de aberturas/fechamentos).
+    """
+    sessoes = SessaoCaixa.objects.all().order_by('-data_abertura')
+    
+    contexto = {
+        'sessoes': sessoes
+    }
+    return render(request, 'sales/lista_sessoes.html', contexto)
+
+
+@login_required
+@group_required('Gerentes')
+def gerar_relatorio_pdf(request, pk):
+    """
+    Gera um PDF com o resumo do fechamento de caixa.
+    """
+    # 1. Buscar os dados
+    sessao = get_object_or_404(SessaoCaixa, pk=pk)
+    
+    # Recalcular os totais (lógica repetida da view anterior)
+    vendas_concluidas = Venda.objects.filter(sessao=sessao, status='CONCLUIDA')
+    total_vendido = vendas_concluidas.aggregate(total=Sum('valor_total'))['total'] or 0
+    valor_esperado = sessao.valor_inicial + total_vendido
+    valor_final = sessao.valor_final_informado or 0
+    diferenca = valor_final - valor_esperado
+
+    # 2. Criar o arquivo em memória
+    buffer = io.BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    
+    # 3. Desenhar o PDF
+    # (Coordenadas X, Y - Y começa de baixo para cima)
+    
+    # Cabeçalho
+    p.setFont("Helvetica-Bold", 18)
+    p.drawString(100, 800, f"Relatório de Fechamento de Caixa #{sessao.pk}")
+    
+    p.setFont("Helvetica", 12)
+    p.drawString(100, 770, f"Operador: {sessao.usuario.username}")
+    p.drawString(100, 755, f"Abertura: {sessao.data_abertura.strftime('%d/%m/%Y %H:%M')}")
+    if sessao.data_fechamento:
+        p.drawString(100, 740, f"Fechamento: {sessao.data_fechamento.strftime('%d/%m/%Y %H:%M')}")
+    
+    p.line(100, 720, 500, 720) # Linha horizontal
+    
+    # Resumo Financeiro
+    y = 700
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(100, y, "Resumo Financeiro")
+    
+    y -= 30
+    p.setFont("Helvetica", 12)
+    p.drawString(100, y, f"(+) Valor Inicial (Suprimento): R$ {sessao.valor_inicial:.2f}")
+    
+    y -= 20
+    p.drawString(100, y, f"(+) Total Vendido: R$ {total_vendido:.2f}")
+    
+    y -= 20
+    p.drawString(100, y, "------------------------------------------------")
+    
+    y -= 20
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(100, y, f"(=) Valor Esperado: R$ {valor_esperado:.2f}")
+    
+    y -= 30
+    p.setFont("Helvetica", 12)
+    p.drawString(100, y, f"(-) Valor na Gaveta: R$ {valor_final:.2f}")
+    
+    y -= 30
+    # Lógica de cor para a diferença (apenas texto aqui)
+    if diferenca >= 0:
+        texto_dif = f"Diferença (Sobra): + R$ {diferenca:.2f}"
+    else:
+        texto_dif = f"Diferença (Quebra): - R$ {abs(diferenca):.2f}"
+        
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(100, y, texto_dif)
+    
+    p.line(100, y-20, 500, y-20)
+
+    # Rodapé
+    p.setFont("Helvetica-Oblique", 10)
+    p.drawString(100, 100, "Gerado pelo sistema VendaFácil PDV")
+
+    # 4. Finalizar e fechar o PDF
+    p.showPage()
+    p.save()
+
+    # 5. Retornar o arquivo para o navegador
+    buffer.seek(0)
+    return FileResponse(buffer, as_attachment=True, filename=f"relatorio_caixa_{sessao.pk}.pdf")

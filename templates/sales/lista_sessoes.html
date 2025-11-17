@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Histórico de Caixas - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h1>Histórico de Sessões de Caixa</h1>
+            <p class="text-muted">Registo de todas as aberturas e fechos de caixa.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if sessoes %}
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th># ID</th>
+                            <th>Data Abertura</th>
+                            <th>Operador</th>
+                            <th>Status</th>
+                            <th>Valor Final</th>
+                            <th class="text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sessao in sessoes %}
+                        <tr>
+                            <td><strong>#{{ sessao.pk }}</strong></td>
+                            <td>{{ sessao.data_abertura|date:"d/m/Y H:i" }}</td>
+                            <td>{{ sessao.usuario.username }}</td>
+                            <td>
+                                {% if sessao.status == 'ABERTO' %}
+                                    <span class="badge bg-success">Aberto</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Fechado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sessao.valor_final_informado %}
+                                    R$ {{ sessao.valor_final_informado|floatformat:2 }}
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'sales:relatorio_sessao' pk=sessao.pk %}" class="btn btn-sm btn-primary">
+                                    Ver Relatório
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-info">Nenhuma sessão de caixa registada.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
