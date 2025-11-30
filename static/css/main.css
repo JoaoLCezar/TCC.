@@ -1,46 +1,100 @@
+/* static/css/main.css */
+
+/* 1. DEFINIÇÃO DA PALETA DE CORES (Variáveis) */
+:root {
+    /* Azul Petróleo Escuro (Mais sério e profissional para PDV) */
+    --primary-color: #2c3e50;       
+    --secondary-color: #34495e;     
+    /* Azul Destaque */
+    --accent-color: #3498db;        
+    /* Cores de Status */
+    --success-color: #27ae60;       
+    --danger-color: #e74c3c;        
+    /* Fundo */
+    --background-light: #f4f7f6; /* Usei a cor do seu CSS original! */
+    --text-color: #333333;
+}
+
+/* 2. CORPO E FONTE */
 body {
+    background-color: var(--background-light);
+    /* A sua lista de fontes original (Excelente escolha!) */
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: #f4f7f6;
-    color: #333;
-    margin: 0;
-    padding: 2em;
+    color: var(--text-color);
 }
 
-.container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 1em;
+/* 3. BARRA DE NAVEGAÇÃO (NAVBAR) */
+.navbar {
+    background-color: var(--primary-color) !important; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* 4. CARDS (CARTÕES - Dashboard e Listas) */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08); /* Sombra suave */
+    transition: all 0.3s ease; 
+    margin-bottom: 20px;
     background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-h1 {
-    color: #0056b3;
-    text-align: center;
-    margin-bottom: 1.5em;
+/* Efeito ao passar o rato: O cartão sobe e a sombra aumenta */
+.card:hover {
+    box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+    transform: translateY(-4px); 
 }
 
-.product-list{
-    list-style-type: none;
-    padding: 0;
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+    border-radius: 12px 12px 0 0 !important;
 }
 
-.product-card{
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 1.5em;
-    margin-bottom: 1em;
-    box-shadow: 0 1px 2px rgba(0,0,0,0,05);
+/* 5. BOTÕES */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
-.product-card h2{
-    margin-top: 0;
-    color: #333;
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
 }
 
-.product-card p{
-    margin: 0.5em 0;
-    color: #555;
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+/* 6. TABELAS (Para os Relatórios) */
+.table thead th {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+/* 7. Ajustes do Container (Opcional) */
+/* Vamos dar um pouco de respiro nas laterais, mas sem travar em 900px */
+.container {
+    padding-top: 20px;
+    padding-bottom: 40px;
 }

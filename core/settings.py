@@ -143,3 +143,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'dashboard' 
 
 LOGOUT_REDIRECT_URL = 'dashboard'
+
+# URL base para aceder aos ficheiros no navegador
+MEDIA_URL = '/media/'
+
+# Caminho físico no computador onde os ficheiros ficam
+MEDIA_ROOT = BASE_DIR / 'media'

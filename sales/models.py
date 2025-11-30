@@ -66,12 +66,27 @@ class Venda(models.Model):
         ('CANCELADA', 'Cancelada'),
     ]
 
+    PAGAMENTO_CHOICES = [
+        ('DINHEIRO', 'Dinheiro'),
+        ('CREDITO', 'Cartão de Crédito'),
+        ('DEBITO', 'Cartão de Débito'),
+        ('PIX', 'PIX'),
+    ]
+
+
     data_hora = models.DateTimeField(auto_now_add=True)
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='CONCLUIDA')
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='vendas', verbose_name="Vendedor")
     cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='compras')
-    
+    sessao = models.ForeignKey(SessaoCaixa, on_delete=models.PROTECT, related_name="vendas_na_sessao", null=True, blank=True)
+
+    forma_pagamento = models.CharField(
+        max_length=20, 
+        choices=PAGAMENTO_CHOICES, 
+        default='DINHEIRO',
+        verbose_name="Forma de Pagamento"
+    )
 
     sessao = models.ForeignKey(
         SessaoCaixa,

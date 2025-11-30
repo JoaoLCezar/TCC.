@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path , include
 from . import views
+from django.conf import settings             # <-- NOVO
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('', views.dashboard_view, name='dashboard'),
@@ -34,4 +36,9 @@ urlpatterns = [
     path('clientes/', include('customers.urls', namespace='customers')),
 
     path('fornecedores/', include('suppliers.urls', namespace='suppliers')),
+
+    path('usuarios/novo/', views.registrar_usuario, name='registrar_usuario'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

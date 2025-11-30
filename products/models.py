@@ -5,12 +5,28 @@ from django.contrib.auth.models import User
     
 class Produto(models.Model):
     nome = models.CharField(max_length=200, help_text="Nome do produto")
+    codigo_barras = models.CharField(
+        max_length=100, 
+        null=True, 
+        blank=True, 
+        unique=True, # Evita dois produtos com o mesmo código
+        verbose_name="Código de Barras",
+        help_text="Opcional. Use leitor ou digite."
+    )
     descricao = models.TextField(blank=True, null=True, help_text="Descrição do Produto")
     preco = models.DecimalField(max_digits=10, decimal_places=2, help_text="Preço do produto")
     estoque = models.IntegerField(default=0, help_text="Quantidade em estoque")
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
+
+    imagem = models.ImageField(
+        upload_to='produtos/', 
+        null=True, 
+        blank=True,
+        verbose_name="Imagem do Produto"
+    )
+
 
     def __str__(self):
         return self.nome

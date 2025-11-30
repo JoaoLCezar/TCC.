@@ -1,10 +1,15 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db.models import Sum, Count
 from sales.models import Venda
 from products.models import Produto
+from django.contrib.auth.models import User
+from django.contrib import messages
+from .forms import RegistroUsuarioForm 
+from core.decorators import group_required
 import datetime
+
 
 @login_required
 def dashboard_view(request):
@@ -32,3 +37,23 @@ def dashboard_view(request):
     }
 
     return render(request, 'dashboard/dashboard.html', contexto)
+
+@login_required
+@group_required('Gerentes') # SÓ Gerentes podem criar novos usuários
+def registrar_usuario(request):
+    """
+    View para cadastrar novos funcionários (Vendedores ou Gerentes).
+    """
+    if request.method == 'POST':
+        form = RegistroUsuarioForm(request.POST)
+        if form.is_valid():
+            novo_usuario = form.save()
+            messages.success(request, f"Usuário '{novo_usuario.username}' criado com sucesso!")
+            return redirect('dashboard') # Ou redirecionar para uma lista de usuários
+    else:
+        form = RegistroUsuarioForm()
+    
+    contexto = {
+        'form': form
+    }
+    return render(request, 'registration/registrar_usuario.html', contexto)
