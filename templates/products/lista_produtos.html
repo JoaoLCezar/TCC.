@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load report_filters %}
 
 {% block title %}Lista de Produtos - VendaFácil{% endblock %}
 
@@ -10,30 +11,73 @@
     </a>
 </div>
 
-
-<div class="row">
-    {% for produto in lista_de_produtos %}
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{% url 'products:detalhe_produto' produto.id %}" class="text-decoration-none text-dark">
-                        {{ produto.nome }}
-                </h5>
-                <h6 class="card-subtitle mb-2 text-muted">{{ produto.categoria }}</h6>
-                <p class="card-text">
-                    <strong>Preço:</strong> R$ {{ produto.preco }} <br>
-                    <strong>Estoque:</strong> {{ produto.estoque }} unidades
-                </p>
-                </div>
-        </div>
+<!-- Itens por página -->
+<div class="d-flex justify-content-end mb-2">
+    <form method="get" class="d-inline-block">
+        <label for="per_page" class="me-2">Itens por página</label>
+        <select id="per_page" name="per_page" class="form-select d-inline-block" style="width: auto; display: inline-block; min-width:76px; padding:0.45rem 0.9rem;" onchange="this.form.submit()">
+            {% for size in page_size_options %}
+                <option value="{{ size }}" {% if per_page == size %}selected{% endif %}>{{ size }}</option>
+            {% endfor %}
+        </select>
+    </form>
     </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="alert alert-warning" role="alert">
-            Nenhum produto cadastrado ainda.
+
+<!-- Filtro por categoria -->
+{% if categorias_filtro %}
+<div class="mb-3">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <span class="text-muted me-2">Filtrar por categoria:</span>
+        <a href="?per_page={{ per_page }}" class="btn btn-sm {% if not categoria_selecionada %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>
+        {% for c in categorias_filtro %}
+            <a href="?categoria={{ c.categoria_id }}&per_page={{ per_page }}" class="btn btn-sm {% if categoria_selecionada == c.categoria_id %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                {{ c.categoria__nome }}
+            </a>
+        {% endfor %}
+    </div>
+    <hr/>
+    {% if categoria_selecionada %}
+    <div class="alert alert-info py-2 mb-2">
+        Mostrando apenas a categoria selecionada.
+        <a href="?per_page={{ per_page }}" class="ms-2">Limpar filtro</a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+
+{% regroup lista_de_produtos by categoria as group_list %}
+
+{% if group_list %}
+    {% for group in group_list %}
+    <h4 class="mt-4 mb-3">{{ group.grouper|default:'Sem Categoria' }}</h4>
+    <div class="row">
+        {% for produto in group.list %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'products:detalhe_produto' produto.id %}" class="text-decoration-none text-dark">
+                            {{ produto.nome }}
+                        </a>
+                    </h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ produto.categoria }}</h6>
+                    <p class="card-text">
+                        <strong>Preço:</strong> {{ produto.preco|currency_br }} <br>
+                        {% if request.user|has_group:'Gerentes' %}
+                        <strong>Preço de custo:</strong> {{ produto.preco_custo|currency_br }} <br>
+                        {% endif %}
+                        <strong>Estoque:</strong> {{ produto.estoque }} unidades
+                    </p>
+                </div>
+            </div>
         </div>
+        {% endfor %}
     </div>
     {% endfor %}
-</div>
+{% else %}
+    <div class="alert alert-warning" role="alert">Nenhum produto cadastrado ainda.</div>
+{% endif %}
+
+{% include 'partials/pagination.html' with page_obj=page_obj base_querystring=base_querystring item_label='produto' %}
 {% endblock %}

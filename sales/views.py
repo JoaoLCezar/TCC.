@@ -1,20 +1,18 @@
-import io
-from django.http import FileResponse
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.paginator import Paginator
 from products.models import Produto, MovimentoEstoque
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from django.db import transaction
-from .models import Venda, ItemVenda, SessaoCaixa
+from django.db import transaction, models
+from django.db.utils import OperationalError, ProgrammingError
+from .models import Venda, ItemVenda, SessaoCaixa, MovimentoCaixa, Devolucao, ItemDevolucao
 from core.decorators import group_required
 from customers.models import Cliente
 from .forms import SessaoCaixaForm, SessaoCaixaFechamentoForm
 from django.utils import timezone
-from django.contrib import messages
-from django.db.models import Sum, Count
+from decimal import Decimal
 import json
 
 
@@ -22,26 +20,170 @@ import json
 @login_required #obrigatorio o login
 @group_required('Gerentes', 'Vendedores')
 def operacao_caixa(request):
+    # Só permite acesso se o usuário tiver uma sessão de caixa aberta vinculada a si
     try:
-        sessao_aberta = SessaoCaixa.objects.get(
-            usuario=request.user, 
-            status='ABERTO'
-        )
+        sessao_aberta = SessaoCaixa.objects.get(usuario=request.user, status='ABERTO')
     except SessaoCaixa.DoesNotExist:
-        messages.error(request, 'Nenhum caixa aberto. Por favor, abra um novo caixa para iniciar as vendas.')
+        messages.error(request, 'Nenhum caixa aberto para este usuário. Abra seu próprio caixa para iniciar as vendas.')
         return redirect('sales:abrir_caixa')
     
-    produtos_disponiveis = Produto.objects.all().order_by('nome')
+    produtos_disponiveis = Produto.objects.filter(ativo=True).order_by('nome')
 
     clientes_cadastrados = Cliente.objects.all().order_by('nome')
+    
+    # Obtém categorias únicas dos produtos
+    from categories.models import Categoria
+    from django.db.models import Count
+    
+    categorias = Categoria.objects.filter(
+        produto__isnull=False
+    ).distinct().annotate(
+        total_produtos=Count('produto')
+    ).order_by('nome')
+
+    # Cálculo de saldo do caixa da sessão atual do usuário
+    from django.db.models import Sum
+    vendas_sessao = Venda.objects.filter(sessao=sessao_aberta, status='CONCLUIDA')
+    total_dinheiro = vendas_sessao.filter(forma_pagamento='DINHEIRO').aggregate(total=Sum('valor_total'))['total'] or 0
+    total_suprimentos = MovimentoCaixa.objects.filter(sessao=sessao_aberta, tipo='SUPRIMENTO').aggregate(total=Sum('valor'))['total'] or 0
+    total_sangrias = MovimentoCaixa.objects.filter(sessao=sessao_aberta, tipo='SANGRIA').aggregate(total=Sum('valor'))['total'] or 0
+    saldo_atual = (sessao_aberta.valor_inicial or 0) + total_dinheiro + total_suprimentos - total_sangrias
+
+    # Se gerente, permitir escolher uma sessão alvo para movimento
+    is_gerente = request.user.groups.filter(name='Gerentes').exists()
+    sessoes_abertas = None
+    if is_gerente:
+        sessoes_abertas = SessaoCaixa.objects.filter(status='ABERTO').select_related('usuario').order_by('-data_abertura')[:50]
 
     contexto = {
         'lista_de_produtos': produtos_disponiveis,
         'lista_de_clientes': clientes_cadastrados,
         'sessao_aberta': sessao_aberta,
+        'categorias': categorias,
+        'saldo_valor_inicial': sessao_aberta.valor_inicial,
+        'saldo_total_dinheiro': total_dinheiro,
+        'saldo_total_suprimentos': total_suprimentos,
+        'saldo_total_sangrias': total_sangrias,
+        'saldo_atual': saldo_atual,
+        'sessoes_abertas': sessoes_abertas,
+        'is_gerente': is_gerente,
     }
 
     return render(request, 'sales/caixa.html', contexto)
+
+
+@login_required
+@group_required('Gerentes')
+@transaction.atomic
+def registrar_movimento_caixa(request):
+    if request.method != 'POST':
+        return redirect('sales:operacao_caixa')
+
+    # Determina a sessão alvo: por padrão a do usuário; se gerente e for passado sessao_id, usa a informada (se aberta)
+    sessao_aberta = None
+    sessao_id_post = request.POST.get('sessao_id')
+    if sessao_id_post and request.user.groups.filter(name='Gerentes').exists():
+        try:
+            sessao_aberta = SessaoCaixa.objects.get(pk=sessao_id_post, status='ABERTO')
+        except SessaoCaixa.DoesNotExist:
+            sessao_aberta = None
+    if not sessao_aberta:
+        try:
+            sessao_aberta = SessaoCaixa.objects.get(usuario=request.user, status='ABERTO')
+        except SessaoCaixa.DoesNotExist:
+            messages.error(request, 'Nenhum caixa aberto para registrar o movimento.')
+            return redirect('sales:abrir_caixa')
+
+    tipo = request.POST.get('tipo')
+    valor_str = request.POST.get('valor')
+    motivo = (request.POST.get('motivo') or '').strip()
+
+    if tipo not in ['SUPRIMENTO', 'SANGRIA']:
+        messages.error(request, 'Tipo de movimento inválido.')
+        return redirect('sales:operacao_caixa')
+
+    # Motivo obrigatório para SANGRIA
+    if tipo == 'SANGRIA' and not motivo:
+        messages.error(request, 'Informe o motivo para a sangria.')
+        return redirect('sales:operacao_caixa')
+
+    try:
+        valor = float(valor_str)
+    except (TypeError, ValueError):
+        messages.error(request, 'Valor inválido.')
+        return redirect('sales:operacao_caixa')
+
+    if valor <= 0:
+        messages.error(request, 'O valor deve ser maior que zero.')
+        return redirect('sales:operacao_caixa')
+
+    MovimentoCaixa.objects.create(
+        sessao=sessao_aberta,
+        usuario=request.user,
+        tipo=tipo,
+        valor=valor,
+        motivo=motivo,
+    )
+    messages.success(request, f"{ 'Suprimento' if tipo=='SUPRIMENTO' else 'Sangria' } registrado com sucesso!")
+    return redirect('sales:operacao_caixa')
+
+
+@login_required
+@group_required('Gerentes')
+@require_POST
+@transaction.atomic
+def cancelar_venda_existente(request, venda_id: int):
+    venda = get_object_or_404(Venda, pk=venda_id)
+    if venda.status != 'CONCLUIDA':
+        messages.warning(request, 'Apenas vendas concluídas podem ser canceladas.')
+        return redirect('sales:detalhe_venda', pk=venda.pk)
+
+    motivo_cancel = (request.POST.get('motivo') or '').strip()
+    if not motivo_cancel:
+        messages.error(request, 'Informe o motivo do cancelamento.')
+        return redirect('sales:detalhe_venda', pk=venda.pk)
+
+    # Repor estoque e registrar movimento de estoque
+    itens = venda.itens.select_related('produto').all()
+    for item in itens:
+        produto = Produto.objects.select_for_update().get(pk=item.produto.pk)
+        produto.estoque += item.quantidade
+        produto.save()
+        MovimentoEstoque.objects.create(
+            produto=produto,
+            quantidade=item.quantidade,
+            tipo='ENTRADA',
+            usuario=request.user,
+            motivo=f'Cancelamento da venda #{venda.pk}'
+        )
+
+    venda.status = 'CANCELADA'
+    venda.save()
+
+    # Registrar sangria automática se a venda foi paga em dinheiro
+    try:
+        if venda.forma_pagamento == 'DINHEIRO' and venda.valor_total and venda.valor_total > 0:
+            sessao_mov = None
+            try:
+                sessao_mov = SessaoCaixa.objects.get(usuario=request.user, status='ABERTO')
+            except SessaoCaixa.DoesNotExist:
+                if venda.sessao and venda.sessao.status == 'ABERTO':
+                    sessao_mov = venda.sessao
+            if sessao_mov:
+                MovimentoCaixa.objects.create(
+                    sessao=sessao_mov,
+                    usuario=request.user,
+                    tipo='SANGRIA',
+                    valor=venda.valor_total,
+                    motivo=f'Reembolso por cancelamento da venda #{venda.pk}: {motivo_cancel}'[:255]
+                )
+            else:
+                messages.warning(request, 'Cancelamento registrado, mas não foi possível registrar a sangria (nenhum caixa aberto).')
+    except Exception:
+        messages.warning(request, 'Cancelamento realizado, porém ocorreu um problema ao registrar a sangria.')
+
+    messages.success(request, f'Venda #{venda.pk} cancelada e itens retornados ao estoque.')
+    return redirect('sales:historico_vendas')
 
 @login_required
 @group_required('Gerentes', 'Vendedores')
@@ -57,8 +199,13 @@ def processar_venda(request):
 
         data = json.loads(request.body)
         carrinho_js = data.get('carrinho')
-
         cliente_id = data.get('cliente_id')
+        forma_pagamento = data.get('forma_pagamento', 'DINHEIRO')
+        desconto_tipo = data.get('desconto_tipo')  # 'valor' ou 'percentual'
+        try:
+            desconto_input = Decimal(str(data.get('desconto_input') or '0'))
+        except Exception:
+            desconto_input = Decimal('0')
 
         if not carrinho_js:
             return JsonResponse({'sucesso': False, 'erro': 'Carrinho vazio'}, status=400)
@@ -74,7 +221,8 @@ def processar_venda(request):
             usuario = request.user,
             status='CONCLUIDA',
             cliente=cliente_obj,
-            sessao=sessao_aberta
+            sessao=sessao_aberta,
+            forma_pagamento=forma_pagamento
         )
 
         valor_total_venda = 0
@@ -89,7 +237,7 @@ def processar_venda(request):
                     raise Exception(f"Produto com ID {produto_id} não encontrado.")
             
             if produto.estoque< quantidade_vendida:
-                raise Exception(f"Estoque insuficiente para {produto.nome}.")
+                raise Exception(f"Estoque insuficiente para {produto.nome}. Disponível: {produto.estoque}, Solicitado: {quantidade_vendida}")
             
             produto.estoque -= quantidade_vendida
             produto.save()
@@ -117,12 +265,25 @@ def processar_venda(request):
 
             valor_total_venda += subtotal_item #Soma o total
 
-        nova_venda.valor_total = valor_total_venda
+        # calcula desconto
+        desconto_total = Decimal('0')
+        if desconto_tipo == 'percentual':
+            if desconto_input < 0:
+                desconto_input = Decimal('0')
+            if desconto_input > 100:
+                desconto_input = Decimal('100')
+            desconto_total = (valor_total_venda * desconto_input) / Decimal('100')
+        elif desconto_tipo == 'valor':
+            if desconto_input < 0:
+                desconto_input = Decimal('0')
+            if desconto_input > valor_total_venda:
+                desconto_input = Decimal(valor_total_venda)
+            desconto_total = desconto_input
+
+        nova_venda.valor_total = valor_total_venda - desconto_total
         nova_venda.save()
 
-
-
-        return JsonResponse({'sucesso': True, 'mensagem': 'Venda processada com sucesso!'})
+        return JsonResponse({'sucesso': True, 'mensagem': 'Venda processada com sucesso!', 'venda_id': nova_venda.pk})
     
     except json.JSONDecodeError:
         return JsonResponse({'sucesso': False, 'erro': 'Dados inválidos (JSON).'}, status=400)
@@ -141,19 +302,41 @@ def historico_vendas(request):
         lista_vendas = Venda.objects.all()
 
     lista_vendas = lista_vendas.order_by('-data_hora')
-                                         
+    
+    # Paginação
+    try:
+        per_page = int(request.GET.get('per_page', 30))
+    except (TypeError, ValueError):
+        per_page = 30
+    if per_page not in [10, 15, 20, 25, 30, 50]:
+        per_page = 30
+    paginator = Paginator(lista_vendas, per_page)  # vendas por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     contexto = {
-        'vendas': lista_vendas,
-        'filtro_status_atual': filtro_status
+        'vendas': page_obj,
+        'filtro_status_atual': filtro_status,
+        'page_obj': page_obj,
+        'per_page': per_page,
+        'base_querystring': f"&status={filtro_status}&per_page={per_page}",
+        'page_size_options': [10, 15, 20, 25, 30, 50],
     }
     return render(request, 'sales/historico_vendas.html', contexto)
 
 @login_required
+@group_required('Gerentes')
 def detalhe_venda(request, pk):
     venda = get_object_or_404(Venda, pk=pk)
 
     itens_da_venda = venda.itens.all()
+    # calcular já devolvido por item e acoplar no objeto
+    for item in itens_da_venda:
+        try:
+            qtd_dev = ItemDevolucao.objects.filter(item_venda=item).aggregate(total=models.Sum('quantidade'))['total'] or 0
+        except (OperationalError, ProgrammingError):
+            qtd_dev = 0
+        setattr(item, 'qtd_devolvida', qtd_dev)
 
     contexto = {
         'venda':venda,
@@ -161,6 +344,127 @@ def detalhe_venda(request, pk):
     }
 
     return render(request, 'sales/detalhe_venda.html', contexto)
+
+
+@login_required
+@group_required('Gerentes', 'Vendedores')
+def imprimir_recibo(request, venda_id: int):
+    venda = get_object_or_404(Venda, pk=venda_id)
+    itens = venda.itens.all()
+    # calcula subtotal dos itens e desconto inferido (se houver)
+    subtotal_itens = sum((item.subtotal for item in itens), 0)
+    try:
+        # Garantir tipos numéricos simples para cálculo
+        subtotal_float = float(subtotal_itens)
+        total_float = float(venda.valor_total)
+    except Exception:
+        subtotal_float = 0.0
+        total_float = 0.0
+    desconto_inferido = max(0.0, round(subtotal_float - total_float, 2))
+
+    contexto = {
+        'venda': venda,
+        'itens': itens,
+        'subtotal_itens': subtotal_float,
+        'desconto_inferido': desconto_inferido,
+    }
+    return render(request, 'sales/recibo.html', contexto)
+
+
+@login_required
+@group_required('Gerentes', 'Vendedores')
+@transaction.atomic
+def registrar_devolucao(request, venda_id: int):
+    venda = get_object_or_404(Venda, pk=venda_id)
+
+    try:
+        sessao_aberta = SessaoCaixa.objects.get(usuario=request.user, status='ABERTO')
+    except SessaoCaixa.DoesNotExist:
+        messages.error(request, 'Abra um caixa para registrar devoluções.')
+        return redirect('sales:abrir_caixa')
+
+    if request.method == 'GET':
+        itens = venda.itens.all()
+        for item in itens:
+            try:
+                qtd_dev = ItemDevolucao.objects.filter(item_venda=item).aggregate(total=models.Sum('quantidade'))['total'] or 0
+            except (OperationalError, ProgrammingError):
+                qtd_dev = 0
+            setattr(item, 'qtd_devolvida', qtd_dev)
+        return render(request, 'sales/registrar_devolucao.html', {
+            'venda': venda,
+            'itens': itens,
+        })
+
+    # POST
+    itens = venda.itens.all()
+    total_devolucao = 0
+    devolucao = Devolucao.objects.create(
+        venda=venda,
+        sessao=sessao_aberta,
+        usuario=request.user,
+        motivo=request.POST.get('motivo') or ''
+    )
+
+    algo_devolvido = False
+    for item in itens:
+        qtd_str = request.POST.get(f'qtd_{item.id}', '0').strip()
+        try:
+            qtd_dev = int(qtd_str or '0')
+        except ValueError:
+            qtd_dev = 0
+        if qtd_dev <= 0:
+            continue
+        # validar limite: vendidos - já devolvidos
+        qtd_ja_dev = ItemDevolucao.objects.filter(item_venda=item).aggregate(total=models.Sum('quantidade'))['total'] or 0
+        max_pode = max(0, item.quantidade - qtd_ja_dev)
+        if qtd_dev > max_pode:
+            qtd_dev = max_pode
+        if qtd_dev <= 0:
+            continue
+
+        subtotal = float(item.preco_unitario) * qtd_dev
+        ItemDevolucao.objects.create(
+            devolucao=devolucao,
+            produto=item.produto,
+            item_venda=item,
+            quantidade=qtd_dev,
+            valor_unitario=item.preco_unitario,
+            subtotal=subtotal
+        )
+        # repõe estoque
+        item.produto.estoque += qtd_dev
+        item.produto.save()
+        MovimentoEstoque.objects.create(
+            produto=item.produto,
+            quantidade=qtd_dev,
+            tipo='ENTRADA',
+            usuario=request.user,
+            motivo=f'Devolução da venda #{venda.pk}'
+        )
+        total_devolucao += subtotal
+        algo_devolvido = True
+
+    if not algo_devolvido:
+        devolucao.delete()
+        messages.warning(request, 'Nenhuma quantidade válida informada para devolução.')
+        return redirect('sales:detalhe_venda', pk=venda.pk)
+
+    devolucao.valor_total = total_devolucao
+    devolucao.save()
+
+    # se a venda original foi DINHEIRO, registra saída (sangria) do valor reembolsado
+    if venda.forma_pagamento == 'DINHEIRO' and total_devolucao > 0:
+        MovimentoCaixa.objects.create(
+            sessao=sessao_aberta,
+            usuario=request.user,
+            tipo='SANGRIA',
+            valor=total_devolucao,
+            motivo=f'Reembolso devolução da venda #{venda.pk}'
+        )
+
+    messages.success(request, f'Devolução registrada. Total reembolsado: R$ {total_devolucao:.2f}')
+    return redirect('sales:detalhe_venda', pk=venda.pk)
 
 @login_required
 @group_required('Gerentes', 'Vendedores')
@@ -304,136 +608,3 @@ def fechar_caixa(request):
     }
     
     return render(request, 'sales/fechar_caixa.html', contexto)
-
-@login_required
-@group_required('Gerentes')
-def relatorio_sessao(request,pk):
-    sessao = get_object_or_404(SessaoCaixa, pk=pk)
-
-    vendas_concluidas = Venda.objects.filter(
-        sessao=sessao, 
-        status='CONCLUIDA'
-    )
-
-    vendas_canceladas_count = Venda.objects.filter(
-        sessao=sessao, 
-        status='CANCELADA'
-    ).count()
-
-    total_vendido = vendas_concluidas.aggregate(
-        total=Sum('valor_total')
-    )['total'] or 0
-
-    valor_inicial = sessao.valor_inicial
-    valor_final_informado = sessao.valor_final_informado or 0
-
-    valor_esperado = valor_inicial + total_vendido
-
-    diferenca = valor_final_informado - valor_esperado
-
-    contexto = {
-        'sessao': sessao,
-        'vendas_concluidas_lista': vendas_concluidas,
-        'vendas_canceladas_count': vendas_canceladas_count,
-        'total_vendido': total_vendido,
-        'valor_esperado': valor_esperado,
-        'diferenca': diferenca,
-    }
-
-    return render(request, 'sales/relatorio_sessao.html', contexto)
-
-@login_required
-@group_required('Gerentes') # Apenas Gerentes devem ver o histórico financeiro
-def listar_sessoes(request):
-    """
-    Lista todas as sessões de caixa (histórico de aberturas/fechamentos).
-    """
-    sessoes = SessaoCaixa.objects.all().order_by('-data_abertura')
-    
-    contexto = {
-        'sessoes': sessoes
-    }
-    return render(request, 'sales/lista_sessoes.html', contexto)
-
-
-@login_required
-@group_required('Gerentes')
-def gerar_relatorio_pdf(request, pk):
-    """
-    Gera um PDF com o resumo do fechamento de caixa.
-    """
-    # 1. Buscar os dados
-    sessao = get_object_or_404(SessaoCaixa, pk=pk)
-    
-    # Recalcular os totais (lógica repetida da view anterior)
-    vendas_concluidas = Venda.objects.filter(sessao=sessao, status='CONCLUIDA')
-    total_vendido = vendas_concluidas.aggregate(total=Sum('valor_total'))['total'] or 0
-    valor_esperado = sessao.valor_inicial + total_vendido
-    valor_final = sessao.valor_final_informado or 0
-    diferenca = valor_final - valor_esperado
-
-    # 2. Criar o arquivo em memória
-    buffer = io.BytesIO()
-    p = canvas.Canvas(buffer, pagesize=A4)
-    
-    # 3. Desenhar o PDF
-    # (Coordenadas X, Y - Y começa de baixo para cima)
-    
-    # Cabeçalho
-    p.setFont("Helvetica-Bold", 18)
-    p.drawString(100, 800, f"Relatório de Fechamento de Caixa #{sessao.pk}")
-    
-    p.setFont("Helvetica", 12)
-    p.drawString(100, 770, f"Operador: {sessao.usuario.username}")
-    p.drawString(100, 755, f"Abertura: {sessao.data_abertura.strftime('%d/%m/%Y %H:%M')}")
-    if sessao.data_fechamento:
-        p.drawString(100, 740, f"Fechamento: {sessao.data_fechamento.strftime('%d/%m/%Y %H:%M')}")
-    
-    p.line(100, 720, 500, 720) # Linha horizontal
-    
-    # Resumo Financeiro
-    y = 700
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(100, y, "Resumo Financeiro")
-    
-    y -= 30
-    p.setFont("Helvetica", 12)
-    p.drawString(100, y, f"(+) Valor Inicial (Suprimento): R$ {sessao.valor_inicial:.2f}")
-    
-    y -= 20
-    p.drawString(100, y, f"(+) Total Vendido: R$ {total_vendido:.2f}")
-    
-    y -= 20
-    p.drawString(100, y, "------------------------------------------------")
-    
-    y -= 20
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(100, y, f"(=) Valor Esperado: R$ {valor_esperado:.2f}")
-    
-    y -= 30
-    p.setFont("Helvetica", 12)
-    p.drawString(100, y, f"(-) Valor na Gaveta: R$ {valor_final:.2f}")
-    
-    y -= 30
-    # Lógica de cor para a diferença (apenas texto aqui)
-    if diferenca >= 0:
-        texto_dif = f"Diferença (Sobra): + R$ {diferenca:.2f}"
-    else:
-        texto_dif = f"Diferença (Quebra): - R$ {abs(diferenca):.2f}"
-        
-    p.setFont("Helvetica-Bold", 12)
-    p.drawString(100, y, texto_dif)
-    
-    p.line(100, y-20, 500, y-20)
-
-    # Rodapé
-    p.setFont("Helvetica-Oblique", 10)
-    p.drawString(100, 100, "Gerado pelo sistema VendaFácil PDV")
-
-    # 4. Finalizar e fechar o PDF
-    p.showPage()
-    p.save()
-
-    # 5. Retornar o arquivo para o navegador
-    buffer.seek(0)
-    return FileResponse(buffer, as_attachment=True, filename=f"relatorio_caixa_{sessao.pk}.pdf")

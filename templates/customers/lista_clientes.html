@@ -11,7 +11,15 @@
         <div class="col-md-6 text-end">
             <a href="{% url 'customers:criar_cliente' %}" class="btn btn-primary">
                 + Adicionar Novo Cliente
-            </a>            
+            </a>
+            <form method="get" class="d-inline-block ms-2">
+                <label for="per_page" class="me-2">Itens por página</label>
+                    <select id="per_page" name="per_page" class="form-select d-inline-block per-page-select" style="width: auto; display: inline-block; min-width:76px; padding:0.45rem 0.9rem;" onchange="this.form.submit()">
+                    {% for size in page_size_options %}
+                        <option value="{{ size }}" {% if per_page == size %}selected{% endif %}>{{ size }}</option>
+                    {% endfor %}
+                </select>
+            </form>
         </div>
     </div>
 
@@ -53,5 +61,7 @@
             {% endif %}    
         </div>
     </div>
+
+    {% include 'partials/pagination.html' with page_obj=page_obj base_querystring=base_querystring item_label='cliente' %}
 </div>
 {% endblock %}

@@ -1,0 +1,59 @@
+{% comment %}
+Reusable pagination controls
+Expected context:
+- page_obj: Django Page instance
+- base_querystring: string starting with & containing additional query params (e.g., &status=CONCLUIDA&per_page=25) or empty
+- item_label (optional): singular noun label for items (default: 'registro')
+{% endcomment %}
+
+{% if page_obj and page_obj.has_other_pages %}
+<nav aria-label="Navegação de páginas" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{{ base_querystring }}" aria-label="Primeira">
+                <span aria-hidden="true">&laquo;&laquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ base_querystring }}" aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo;&laquo;</span></li>
+        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}{{ base_querystring }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ base_querystring }}" aria-label="Próxima">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{{ base_querystring }}" aria-label="Última">
+                <span aria-hidden="true">&raquo;&raquo;</span>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        <li class="page-item disabled"><span class="page-link">&raquo;&raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+<p class="text-center text-muted">
+    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    ({{ page_obj.paginator.count }} {{ item_label|default:'registro' }}{{ page_obj.paginator.count|pluralize }})
+    {% if base_querystring %}&nbsp;|&nbsp;por página: {{ page_obj.paginator.per_page }}{% endif %}
+    
+</p>
+{% endif %}

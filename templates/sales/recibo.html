@@ -1,0 +1,94 @@
+{% load report_filters %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recibo #{{ venda.pk }}</title>
+  <style>
+    /* Layout pensado para impressoras térmicas 80mm */
+    :root { --w: 72mm; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .recibo { width: var(--w); margin: 0 auto; padding: 8px 10px; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .small { font-size: 12px; }
+    .xs { font-size: 11px; }
+    h1, h2, h3, h4, h5 { margin: 0; padding: 0; font-weight: 700; }
+    .header { margin-bottom: 8px; border-bottom: 1px dashed #000; padding-bottom: 6px; }
+    .linha { display: flex; justify-content: space-between; }
+    .itens { margin: 8px 0; border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 6px 0; }
+    .item { margin: 4px 0; }
+    .totais { margin-top: 8px; }
+    .muted { color: #333; }
+    .footer { margin-top: 10px; border-top: 1px dashed #000; padding-top: 6px; }
+    .noprint { margin-top: 10px; }
+    @media print {
+      .noprint { display: none !important; }
+      html, body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <div class="recibo">
+    <div class="header center">
+      <h4>{{ EMPRESA_NOME|default:"VendaFácil" }}</h4>
+      {% if EMPRESA_ENDERECO %}<div class="xs">{{ EMPRESA_ENDERECO }}</div>{% endif %}
+      <div class="xs muted">Recibo de Venda</div>
+      {% if EMPRESA_TELEFONE or EMPRESA_CNPJ %}
+        <div class="xs muted">
+          {% if EMPRESA_TELEFONE %}Tel: {{ EMPRESA_TELEFONE }}{% endif %}
+          {% if EMPRESA_TELEFONE and EMPRESA_CNPJ %} • {% endif %}
+          {% if EMPRESA_CNPJ %}CNPJ: {{ EMPRESA_CNPJ }}{% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="small">
+      <div class="linha"><span><strong>Recibo:</strong> #{{ venda.pk }}</span><span><strong>Data:</strong> {{ venda.data_hora|date:"d/m/Y H:i" }}</span></div>
+      <div class="linha"><span><strong>Vendedor:</strong> {{ venda.usuario.username|default:"-" }}</span><span><strong>Status:</strong> {{ venda.get_status_display }}</span></div>
+      <div class="linha"><span><strong>Pagamento:</strong> {{ venda.get_forma_pagamento_display }}</span></div>
+      {% if venda.cliente %}
+      <div class="linha"><span><strong>Cliente:</strong> {{ venda.cliente.nome }}</span></div>
+      {% endif %}
+    </div>
+
+    <div class="itens small">
+      {% for item in itens %}
+        <div class="item">
+          <div>{{ item.produto.nome }}</div>
+          <div class="linha">
+            <span class="xs">Qtd: {{ item.quantidade }} x {{ item.preco_unitario|currency_br }}</span>
+            <span class="xs"><strong>{{ item.subtotal|currency_br }}</strong></span>
+          </div>
+        </div>
+      {% empty %}
+        <div class="xs muted">Sem itens.</div>
+      {% endfor %}
+    </div>
+
+    <div class="totais small">
+      <div class="linha"><span>Subtotal:</span><span>{{ subtotal_itens|currency_br }}</span></div>
+      {% if desconto_inferido and desconto_inferido > 0 %}
+        <div class="linha"><span>Desconto:</span><span>- {{ desconto_inferido|currency_br }}</span></div>
+      {% endif %}
+      <div class="linha"><span><strong>Total:</strong></span><span><strong>{{ venda.valor_total|currency_br }}</strong></span></div>
+    </div>
+
+    <div class="footer center xs">
+      Obrigado pela preferência!
+    </div>
+
+    <div class="noprint center">
+      <button onclick="window.print()">Imprimir</button>
+    </div>
+  </div>
+
+  <script>
+    // Auto imprimir ao abrir
+    window.addEventListener('load', function(){
+      setTimeout(function(){ window.print(); }, 200);
+    });
+  </script>
+</body>
+</html>

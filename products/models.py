@@ -5,31 +5,21 @@ from django.contrib.auth.models import User
     
 class Produto(models.Model):
     nome = models.CharField(max_length=200, help_text="Nome do produto")
-    codigo_barras = models.CharField(
-        max_length=100, 
-        null=True, 
-        blank=True, 
-        unique=True, # Evita dois produtos com o mesmo código
-        verbose_name="Código de Barras",
-        help_text="Opcional. Use leitor ou digite."
-    )
+    codigo_barras = models.CharField(max_length=50, blank=True, null=True, unique=True, help_text="Código de barras do produto (EAN-13, EAN-8, etc.)")
     descricao = models.TextField(blank=True, null=True, help_text="Descrição do Produto")
-    preco = models.DecimalField(max_digits=10, decimal_places=2, help_text="Preço do produto")
+    preco_custo = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Preço de custo do produto")
+    preco = models.DecimalField(max_digits=10, decimal_places=2, help_text="Preço de venda do produto")
     estoque = models.IntegerField(default=0, help_text="Quantidade em estoque")
     categoria = models.ForeignKey(Categoria, on_delete=models.SET_NULL, null=True, blank=True)
+    ativo = models.BooleanField(default=True, help_text="Se o produto está ativo/visível no sistema")
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
 
-    imagem = models.ImageField(
-        upload_to='produtos/', 
-        null=True, 
-        blank=True,
-        verbose_name="Imagem do Produto"
-    )
-
-
     def __str__(self):
         return self.nome
+    
+    class Meta:
+        db_table = 'produtos'
     
 class MovimentoEstoque(models.Model):
     TIPO_MOVIMENTO_CHOICE = [
@@ -76,6 +66,7 @@ class MovimentoEstoque(models.Model):
 
     class Meta:
         ordering = ['-data_hora']
+        db_table = 'movimentos_estoque'
         verbose_name = "Movimentação de Estoque"
         verbose_name_plural = "Movimentações de Estoque"
 

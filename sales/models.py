@@ -52,6 +52,7 @@ class SessaoCaixa(models.Model):
 
     class Meta:
         ordering = ['-data_abertura']
+        db_table = 'sessoes_caixa'
         verbose_name = "Sessão de Caixa"
         verbose_name_plural = "Sessões de Caixa"
 
@@ -65,28 +66,15 @@ class Venda(models.Model):
         ('CONCLUIDA', 'Concluida'),
         ('CANCELADA', 'Cancelada'),
     ]
-
-    PAGAMENTO_CHOICES = [
+    
+    FORMA_PAGAMENTO_CHOICES = [
         ('DINHEIRO', 'Dinheiro'),
-        ('CREDITO', 'Cartão de Crédito'),
         ('DEBITO', 'Cartão de Débito'),
+        ('CREDITO', 'Cartão de Crédito'),
         ('PIX', 'PIX'),
+        ('BOLETO', 'Boleto'),
+        ('OUTROS', 'Outros'),
     ]
-
-
-    data_hora = models.DateTimeField(auto_now_add=True)
-    valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='CONCLUIDA')
-    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='vendas', verbose_name="Vendedor")
-    cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, related_name='compras')
-    sessao = models.ForeignKey(SessaoCaixa, on_delete=models.PROTECT, related_name="vendas_na_sessao", null=True, blank=True)
-
-    forma_pagamento = models.CharField(
-        max_length=20, 
-        choices=PAGAMENTO_CHOICES, 
-        default='DINHEIRO',
-        verbose_name="Forma de Pagamento"
-    )
 
     sessao = models.ForeignKey(
         SessaoCaixa,
@@ -96,9 +84,8 @@ class Venda(models.Model):
         blank=True
     )
 
-
     data_hora = models.DateTimeField(
-        auto_now_add= True,
+        auto_now_add=True,
         verbose_name="Data e Hora da Venda"
     )
 
@@ -115,6 +102,12 @@ class Venda(models.Model):
         default='CONCLUIDA'
     )
 
+    forma_pagamento = models.CharField(
+        max_length=20,
+        choices=FORMA_PAGAMENTO_CHOICES,
+        default='DINHEIRO',
+        verbose_name="Forma de Pagamento"
+    )
 
     usuario = models.ForeignKey(
         User,
@@ -130,11 +123,12 @@ class Venda(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='compras'
+        related_name='vendas'
     )
 
     class Meta:
         ordering = ['-data_hora']
+        db_table = 'vendas'
         verbose_name = "Venda"
         verbose_name_plural = "Vendas"
 
@@ -179,3 +173,70 @@ class ItemVenda(models.Model):
 
     def __str__(self):
         return f"{self.quantidade}x {self.produto.nome} @ R${self.preco_unitario}"
+
+    class Meta:
+        db_table = 'itens_venda'
+
+
+class MovimentoCaixa(models.Model):
+    TIPOS = [
+        ('SUPRIMENTO', 'Suprimento'),
+        ('SANGRIA', 'Sangria'),
+    ]
+
+    sessao = models.ForeignKey(
+        SessaoCaixa,
+        on_delete=models.PROTECT,
+        related_name='movimentos_caixa'
+    )
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name='movimentos_caixa'
+    )
+    tipo = models.CharField(max_length=20, choices=TIPOS)
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    motivo = models.CharField(max_length=255, blank=True, null=True)
+    data_hora = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-data_hora']
+        db_table = 'movimentos_caixa'
+        verbose_name = 'Movimento de Caixa'
+        verbose_name_plural = 'Movimentos de Caixa'
+
+    def __str__(self):
+        return f"{self.tipo} R$ {self.valor} (Sessão #{self.sessao_id})"
+
+
+class Devolucao(models.Model):
+    venda = models.ForeignKey(Venda, on_delete=models.PROTECT, related_name='devolucoes')
+    sessao = models.ForeignKey(SessaoCaixa, on_delete=models.PROTECT, null=True, blank=True, related_name='devolucoes')
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT, related_name='devolucoes')
+    data_hora = models.DateTimeField(auto_now_add=True)
+    motivo = models.CharField(max_length=255, blank=True, null=True)
+    valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        ordering = ['-data_hora']
+        db_table = 'devolucoes'
+        verbose_name = 'Devolução'
+        verbose_name_plural = 'Devoluções'
+
+    def __str__(self):
+        return f"Devolução #{self.pk} da Venda #{self.venda_id}"
+
+
+class ItemDevolucao(models.Model):
+    devolucao = models.ForeignKey(Devolucao, on_delete=models.CASCADE, related_name='itens')
+    produto = models.ForeignKey(Produto, on_delete=models.PROTECT)
+    item_venda = models.ForeignKey(ItemVenda, on_delete=models.SET_NULL, null=True, blank=True)
+    quantidade = models.PositiveIntegerField()
+    valor_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.quantidade}x {self.produto.nome} (Devolução #{self.devolucao_id})"
+
+    class Meta:
+        db_table = 'itens_devolucao'

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Acesso negado{% endblock %}
+
+{% block content %}
+<div class="row mt-5">
+    <div class="col-md-8 offset-md-2">
+        <div class="card border-danger">
+            <div class="card-body">
+                <h2 class="card-title text-danger">Acesso negado</h2>
+                <p class="card-text">Você não tem permissão para acessar esta página.</p>
+
+                {% if required_groups %}
+                    <p>Permissão necessária: <strong>{{ required_groups|join:", " }}</strong></p>
+                {% endif %}
+
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">Voltar ao painel</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -5,8 +5,25 @@
 {% block content %}
 <div class="row">
     <div class="col-md-6 offset-md-3">
-        <div class="card">
+                <div class="card login-card">
             <div class="card-body">
+                        <style>
+                            /* Small helper to style the auth inputs like Bootstrap's form-control
+                               This avoids template call syntax errors while keeping alignment. */
+                            .login-card .form-control-like {
+                                display: block;
+                                width: 100%;
+                                padding: .375rem .75rem;
+                                font-size: 1rem;
+                                line-height: 1.5;
+                                color: #495057;
+                                background-color: #fff;
+                                background-clip: padding-box;
+                                border: 1px solid #ced4da;
+                                border-radius: .25rem;
+                                box-sizing: border-box;
+                            }
+                        </style>
                 <h1 class="card-title text-center">Login no VendaFácil</h1>
                 <hr>
                 
@@ -18,11 +35,29 @@
                 {% endif %}
 
                 <form method="POST" action="{% url 'login' %}?next={{ request.GET.next }}">
-                    
                     {% csrf_token %}
-                    
-                    {{ form.as_p }}
-                    
+
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">Usuário</label>
+                        {% comment %} render field normally and apply visual styling via CSS class wrapper {% endcomment %}
+                        <div class="">
+                            {{ form.username }}
+                        </div>
+                        {% for error in form.username.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label">Senha</label>
+                        <div class="">
+                            {{ form.password }}
+                        </div>
+                        {% for error in form.password.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
                     <hr>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg">Entrar</button>

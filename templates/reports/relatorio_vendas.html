@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Vendas - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>📊 Relatório de Vendas</h1>
+        <a href="{% url 'reports:menu_relatorios' %}" class="btn btn-secondary">← Voltar</a>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="data_inicio" class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="data_inicio" name="data_inicio" value="{{ data_inicio }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="data_fim" class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="data_fim" name="data_fim" value="{{ data_fim }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filtrar</button>
+                    <a href="?data_inicio={{ data_inicio }}&data_fim={{ data_fim }}" class="btn btn-outline-primary">Atualizar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Vendas</h5>
+                    <p class="card-text fs-3">{{ total_vendas }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Valor Total</h5>
+                    <p class="card-text fs-3">R$ {{ valor_total|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Ticket Médio</h5>
+                    <p class="card-text fs-3">R$ {{ ticket_medio|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botão PDF -->
+    <div class="mb-3">
+        <a href="{% url 'reports:relatorio_vendas_pdf' %}?data_inicio={{ data_inicio }}&data_fim={{ data_fim }}" class="btn btn-danger" target="_blank">
+            📄 Exportar para PDF
+        </a>
+    </div>
+    
+    <!-- Vendas por Dia -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Vendas por Dia</h5>
+        </div>
+        <div class="card-body">
+            {% if vendas_por_dia %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Quantidade</th>
+                        <th>Valor Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in vendas_por_dia %}
+                    <tr>
+                        <td>{{ item.dia }}</td>
+                        <td>{{ item.quantidade }}</td>
+                        <td>R$ {{ item.total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">Nenhuma venda no período selecionado.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Produtos Mais Vendidos -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Top 10 Produtos Mais Vendidos</h5>
+        </div>
+        <div class="card-body">
+            {% if produtos_vendidos %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Quantidade</th>
+                        <th>Valor Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in produtos_vendidos %}
+                    <tr>
+                        <td>{{ item.produto__nome }}</td>
+                        <td>{{ item.quantidade_total }}</td>
+                        <td>R$ {{ item.valor_total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">Nenhum produto vendido no período.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Lista de Vendas -->
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h5 class="mb-0">Últimas 50 Vendas</h5>
+        </div>
+        <div class="card-body">
+            {% if vendas %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Data/Hora</th>
+                        <th>Cliente</th>
+                        <th>Valor</th>
+                        <th>Usuário</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venda in vendas %}
+                    <tr>
+                        <td>#{{ venda.id }}</td>
+                        <td>{{ venda.data_hora|date:"d/m/Y H:i" }}</td>
+                        <td>{{ venda.cliente.nome|default:"N/A" }}</td>
+                        <td>R$ {{ venda.valor_total|floatformat:2 }}</td>
+                        <td>{{ venda.usuario.username }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">Nenhuma venda encontrada.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

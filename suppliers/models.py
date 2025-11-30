@@ -41,6 +41,7 @@ class Fornecedor(models.Model):
 
     class Meta:
         ordering = ('nome_fantasia',)
+        db_table = 'fornecedores'
         verbose_name = "Fornecedor"
         verbose_name_plural = "Fornecedores"
 

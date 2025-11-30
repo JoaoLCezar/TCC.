@@ -1,100 +1,615 @@
-/* static/css/main.css */
-
-/* 1. DEFINIÇÃO DA PALETA DE CORES (Variáveis) */
-:root {
-    /* Azul Petróleo Escuro (Mais sério e profissional para PDV) */
-    --primary-color: #2c3e50;       
-    --secondary-color: #34495e;     
-    /* Azul Destaque */
-    --accent-color: #3498db;        
-    /* Cores de Status */
-    --success-color: #27ae60;       
-    --danger-color: #e74c3c;        
-    /* Fundo */
-    --background-light: #f4f7f6; /* Usei a cor do seu CSS original! */
-    --text-color: #333333;
-}
-
-/* 2. CORPO E FONTE */
+/* ===========================
+   Estilos Globais
+   =========================== */
 body {
-    background-color: var(--background-light);
-    /* A sua lista de fontes original (Excelente escolha!) */
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-attachment: fixed;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
 }
 
-/* 3. BARRA DE NAVEGAÇÃO (NAVBAR) */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ===========================
+   Navbar Customizado
+   =========================== */
 .navbar {
-    background-color: var(--primary-color) !important; 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
 }
 
 .navbar-brand {
     font-weight: 700;
+    font-size: 1.5rem;
     letter-spacing: 1px;
-    text-transform: uppercase;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
 }
 
-/* 4. CARDS (CARTÕES - Dashboard e Listas) */
+.navbar-brand:hover {
+    transform: scale(1.05);
+}
+
+.nav-link {
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 0.5rem 1rem !important;
+    margin: 0 0.25rem;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffc107 !important;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    margin-top: 0.5rem;
+}
+
+.dropdown-item {
+    transition: all 0.2s ease;
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    margin: 0.25rem 0.5rem;
+}
+
+.dropdown-item:hover {
+    background-color: #0d6efd;
+    color: white;
+    transform: translateX(5px);
+}
+
+/* User Info Box */
+.user-info-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    margin: 0 0.5rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.user-info-box:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.user-avatar {
+    font-size: 2rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.user-name {
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.user-role {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    align-self: flex-start;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ===========================
+   Container Principal
+   =========================== */
+.container {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+main.container {
+    min-height: calc(100vh - 200px);
+}
+
+/* ===========================
+   Títulos e Textos
+   =========================== */
+h1 {
+    color: #0d6efd;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 15px;
+}
+
+h1::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(90deg, #0d6efd, #6610f2);
+    border-radius: 2px;
+}
+
+h2 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+h5 {
+    font-weight: 600;
+}
+
+/* ===========================
+   Cards
+   =========================== */
 .card {
     border: none;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08); /* Sombra suave */
-    transition: all 0.3s ease; 
-    margin-bottom: 20px;
-    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* Efeito ao passar o rato: O cartão sobe e a sombra aumenta */
 .card:hover {
-    box-shadow: 0 12px 20px rgba(0,0,0,0.15);
-    transform: translateY(-4px); 
+    transform: translateY(-8px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
 }
 
-.card-header {
-    background-color: white;
-    border-bottom: 1px solid #eee;
+.card-body {
+    padding: 2rem;
+}
+
+.card-title {
+    color: #2c3e50;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.card-text {
+    color: #6c757d;
+    line-height: 1.7;
+    font-size: 0.95rem;
+}
+
+/* Cards de Dashboard */
+.bg-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+}
+
+.bg-success {
+    background: linear-gradient(135deg, #198754 0%, #146c43 100%) !important;
+}
+
+.bg-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%) !important;
+}
+
+.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%) !important;
+}
+
+.bg-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%) !important;
+}
+
+.bg-primary .card-title,
+.bg-primary .card-text,
+.bg-success .card-title,
+.bg-success .card-text,
+.bg-danger .card-title,
+.bg-danger .card-text,
+.bg-info .card-title,
+.bg-info .card-text {
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.bg-warning .card-title,
+.bg-warning .card-text {
+    color: #000 !important;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* ===========================
+   Botões
+   =========================== */
+.btn {
+    border-radius: 8px;
+    padding: 0.6rem 1.5rem;
     font-weight: 600;
-    border-radius: 12px 12px 0 0 !important;
+    transition: all 0.3s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-/* 5. BOTÕES */
+.btn i {
+    font-size: 1rem;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
 .btn-primary {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
 }
 
 .btn-primary:hover {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
+    background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
 }
 
 .btn-success {
-    background-color: var(--success-color);
-    border-color: var(--success-color);
+    background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #146c43 0%, #0f5132 100%);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%);
+    color: #000;
+    font-weight: 700;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #ffca2c 0%, #ffd60a 100%);
+    color: #000;
 }
 
 .btn-danger {
-    background-color: var(--danger-color);
-    border-color: var(--danger-color);
+    background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);
 }
 
-/* 6. TABELAS (Para os Relatórios) */
-.table thead th {
-    background-color: var(--primary-color);
+.btn-danger:hover {
+    background: linear-gradient(135deg, #bb2d3b 0%, #a02834 100%);
+}
+
+.btn-outline-light {
+    border: 2px solid rgba(255, 255, 255, 0.8);
     color: white;
+    background: transparent;
+    font-weight: 600;
+}
+
+.btn-outline-light:hover {
+    background: white;
+    color: #0d6efd;
+    border-color: white;
+}
+
+.btn-outline-secondary {
+    border: 2px solid #6c757d;
+    color: #6c757d;
+    background: transparent;
+}
+
+.btn-outline-secondary:hover {
+    background: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+/* ===========================
+   Tabelas
+   =========================== */
+.table {
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+}
+
+.table thead th {
     border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    padding: 1rem;
 }
 
-.table-hover tbody tr:hover {
-    background-color: rgba(52, 152, 219, 0.1);
+.table tbody tr {
+    transition: all 0.2s ease;
 }
 
-/* 7. Ajustes do Container (Opcional) */
-/* Vamos dar um pouco de respiro nas laterais, mas sem travar em 900px */
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* ===========================
+   Formulários
+   =========================== */
+.form-control,
+.form-select {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* ===========================
+   Ajuste específico para selector 'Itens por página'
+   Reaplico com !important para garantir precedência caso outras regras tenham sido revertidas.
+   =========================== */
+.per-page-select {
+    padding: 0.55rem 1rem !important;
+    min-width: 72px !important;      /* aumentar para evitar sobreposição da seta */
+    margin-left: 0.6rem !important;  /* distância do rótulo */
+    line-height: 1.2 !important;
+    vertical-align: middle !important;
+    display: inline-block !important;
+    -webkit-appearance: menulist-button !important;
+}
+@media (max-width: 576px) {
+    .per-page-select {
+        min-width: 52px !important;
+        padding: 0.4rem 0.7rem !important;
+        margin-left: 0.4rem !important;
+    }
+}
+
+/* ===========================
+   Alerts
+   =========================== */
+.alert {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d1e7dd 0%, #badbcc 100%);
+    color: #0f5132;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c2c7 100%);
+    color: #842029;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffecb5 100%);
+    color: #664d03;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #cfe2ff 0%, #b6d4fe 100%);
+    color: #084298;
+}
+
+/* ===========================
+   Footer
+   =========================== */
+footer {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2rem 0;
+    margin-top: 3rem;
+    border-top: 3px solid #0d6efd;
+    backdrop-filter: blur(10px);
+}
+
+footer p {
+    margin: 0;
+    font-weight: 500;
+}
+
+/* ===========================
+   Animações
+   =========================== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .container {
-    padding-top: 20px;
-    padding-bottom: 40px;
+    animation: fadeIn 0.5s ease-out;
 }
+
+/* ===========================
+   Utilitários
+   =========================== */
+.text-muted {
+    color: #6c757d !important;
+}
+
+hr {
+    border-top: 2px solid rgba(0, 0, 0, 0.1);
+    margin: 2rem 0;
+}
+
+/* ===========================
+   Badges Melhorados
+   =========================== */
+.badge {
+    padding: 0.4rem 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #198754 0%, #146c43 100%) !important;
+}
+
+.badge.bg-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%) !important;
+}
+
+.badge.bg-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%) !important;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%) !important;
+}
+
+.badge.bg-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+}
+
+/* ===========================
+   Responsividade
+   =========================== */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .user-info-box {
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .user-name {
+        font-size: 0.85rem;
+    }
+    
+    .user-avatar {
+        font-size: 1.5rem;
+    }
+}
+
+/* ===========================
+   Produtos
+   =========================== */
+.product-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.product-card {
+    background-color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.product-card h2 {
+    margin-top: 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.product-card p {
+    margin: 0.5rem 0;
+    color: #555;
+    line-height: 1.6;
+}
+
+/* Ajuste global para selects 'Itens por página' - aplica mesmo sem alterar templates */
+select[name="per_page"], select#per_page {
+    min-width: 76px !important;    /* espaço suficiente para dois dígitos + seta */
+    padding: 0.45rem 1rem !important;
+    margin-left: 0.6rem !important;
+    vertical-align: middle !important;
+    box-sizing: border-box !important;
+    appearance: menulist-button !important;
+    -webkit-appearance: menulist-button !important;
+}
+
+@media (max-width: 576px) {
+    select[name="per_page"], select#per_page {
+        min-width: 56px !important;
+        padding: 0.35rem 0.6rem !important;
+        margin-left: 0.4rem !important;
+    }
+}
+

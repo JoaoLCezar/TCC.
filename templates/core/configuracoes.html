@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Configurações</h1>
+    <div>
+      <a href="{% url 'reports:menu_relatorios' %}" class="btn btn-outline-primary">Ir para Relatórios</a>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    Somente <strong>Gerentes</strong> podem acessar esta página. Aqui você pode gerenciar usuários (Gerentes/Vendedores) e, opcionalmente, entrar como outro usuário para testes.
+  </div>
+
+  <div class="row">
+    <div class="col-lg-6 mb-4">
+      <div class="card">
+        <div class="card-header bg-primary text-white">Criar novo usuário</div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="acao" value="criar_usuario">
+            <div class="mb-2">
+              <label class="form-label">Usuário</label>
+              <input type="text" name="username" class="form-control" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Senha</label>
+              <input type="password" name="senha" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Grupo</label>
+              <select name="grupo" class="form-select" required>
+                <option value="Vendedores">Vendedores</option>
+                <option value="Gerentes">Gerentes</option>
+              </select>
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary">Criar Usuário</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+      <div class="card">
+        <div class="card-header bg-secondary text-white">Sessão atual</div>
+        <div class="card-body">
+          <p>Você está logado como: <strong>{{ request.user.username }}</strong></p>
+          {% if request.session.impersonated_by %}
+            <p><span class="badge bg-warning text-dark">Impersonando</span></p>
+            <a class="btn btn-outline-danger" href="{% url 'sair_impersonacao' %}">Sair da Impersonação</a>
+          {% else %}
+            <p class="text-muted">Você pode escolher um usuário abaixo e clicar em “Entrar como”.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header bg-dark text-white">Gerenciar Usuários</div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Usuário</th>
+              <th>Grupos</th>
+              <th class="text-end">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in usuarios %}
+              <tr>
+                <td>{{ u.username }}</td>
+                <td>
+                  {% for g in u.groups.all %}
+                    <span class="badge bg-info me-1">{{ g.name }}</span>
+                  {% empty %}
+                    <span class="text-muted">Sem grupo</span>
+                  {% endfor %}
+                </td>
+                <td class="text-end">
+                  <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="trocar_grupo">
+                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input type="hidden" name="grupo" value="Gerentes">
+                    <button class="btn btn-sm btn-outline-primary" {% if request.user.id == u.id %}disabled{% endif %}>Tornar Gerente</button>
+                  </form>
+                  <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="trocar_grupo">
+                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <input type="hidden" name="grupo" value="Vendedores">
+                    <button class="btn btn-sm btn-outline-secondary" {% if request.user.id == u.id %}disabled{% endif %}>Tornar Vendedor</button>
+                  </form>
+                  <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#modalSenha{{ u.id }}">Trocar Senha</button>
+                  <a class="btn btn-sm btn-outline-warning" href="{% url 'impersonar_usuario' user_id=u.id %}" {% if request.user.id == u.id %}disabled aria-disabled="true"{% endif %}>Entrar como</a>
+                  <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="acao" value="desativar_usuario">
+                    <input type="hidden" name="user_id" value="{{ u.id }}">
+                    <button class="btn btn-sm btn-outline-dark" {% if request.user.id == u.id %}disabled{% endif %}>
+                      {% if not u.is_active %}Ativar{% else %}Desativar{% endif %}
+                    </button>
+                  </form>
+                  <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalExcluir{{ u.id }}" {% if request.user.id == u.id %}disabled aria-disabled="true"{% endif %}>Excluir</button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">Nenhum usuário encontrado.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modais para trocar senha -->
+{% for u in usuarios %}
+<div class="modal fade" id="modalSenha{{ u.id }}" tabindex="-1" aria-labelledby="modalSenhaLabel{{ u.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalSenhaLabel{{ u.id }}">Trocar senha de {{ u.username }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="trocar_senha">
+        <input type="hidden" name="user_id" value="{{ u.id }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="novaSenha{{ u.id }}" class="form-label">Nova senha</label>
+            <input type="password" name="nova_senha" id="novaSenha{{ u.id }}" class="form-control" required minlength="4">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Alterar Senha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+<!-- Modal de confirmação de exclusão -->
+{% for u in usuarios %}
+<div class="modal fade" id="modalExcluir{{ u.id }}" tabindex="-1" aria-labelledby="modalExcluirLabel{{ u.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalExcluirLabel{{ u.id }}">Excluir usuário {{ u.username }}?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja excluir a conta deste usuário? Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal-footer">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="acao" value="deletar_usuario">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Excluir Usuário</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load report_filters %}
 
 {% block title %}Historico de Vendas - VendaFácil{% endblock %}
 
@@ -29,6 +30,16 @@
                         </select>
                     </div>
                     <div class="col-auto">
+                        <label for="per_page" class="col-form-label">Itens por página:</label>
+                    </div>
+                    <div class="col-auto">
+                            <select id="per_page" name="per_page" class="form-select per-page-select" style="min-width:76px; padding:0.45rem 0.9rem;">
+                            {% for size in page_size_options %}
+                                <option value="{{ size }}" {% if per_page == size %}selected{% endif %}>{{ size }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-auto">
                         <button type="submit" class="btn btn-primary">Filtrar</button>
                     </div>
                 </form>
@@ -53,13 +64,16 @@
 
                             <td>{{ venda.data_hora|date:"d/m/Y H:i" }}</td>
 
-                            <td>{{ venda.usuario.username }}</td>
+                            <td>{% if venda.usuario %}{{ venda.usuario.username }}{% else %}Não atribuído{% endif %}</td>
 
-                            <td>R$ {{ venda.valor_total|floatformat:2 }}</td>
+                            <td>{{ venda.valor_total|currency_br }}</td>
 
                             <td>
                                 <a href="{% url 'sales:detalhe_venda' pk=venda.pk %}" class="btn btn-sm btn-outline-primary ">
                                     Ver Detalhes
+                                </a>
+                                <a href="{% url 'sales:imprimir_recibo' venda_id=venda.pk %}" class="btn btn-sm btn-outline-success" target="_blank">
+                                    Imprimir
                                 </a>
                             </td>
                         </tr>
@@ -73,6 +87,8 @@
                 {% endif %}
             </div>
         </div>
+
+        {% include 'partials/pagination.html' with page_obj=page_obj base_querystring=base_querystring item_label='venda' %}
     </div>
 </div>
 {% endblock %}

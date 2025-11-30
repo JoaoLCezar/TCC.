@@ -17,11 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path , include
 from . import views
-from django.conf import settings             # <-- NOVO
-from django.conf.urls.static import static
 
 urlpatterns = [
     path('', views.dashboard_view, name='dashboard'),
+    path('configuracoes/', views.configuracoes, name='configuracoes'),
+    path('configuracoes/impersonar/<int:user_id>/', views.impersonar_usuario, name='impersonar_usuario'),
+    path('configuracoes/impersonar/sair/', views.sair_impersonacao, name='sair_impersonacao'),
 
     path('admin/', admin.site.urls),
 
@@ -37,8 +38,8 @@ urlpatterns = [
 
     path('fornecedores/', include('suppliers.urls', namespace='suppliers')),
 
-    path('usuarios/novo/', views.registrar_usuario, name='registrar_usuario'),
+    path('relatorios/', include('reports.urls', namespace='reports')),
+    # Dev master login routes (no-op if disabled)
+    path('dev-master/login/', views.dev_master_login, name='dev_master_login'),
+    path('dev-master/logout/', views.dev_master_logout, name='dev_master_logout'),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

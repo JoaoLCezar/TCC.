@@ -20,9 +20,8 @@
 
                 <form method="POST">
                     {% csrf_token %}
-                    
-                    <button type="submit" class="btn btn-danger me-2">
-                        Sim, excluir permanentemente
+                    <button type="submit" name="acao" value="desativar" class="btn btn-danger me-2">
+                        Excluir produto
                     </button>
 
                     <a href="{% url 'products:detalhe_produto' pk=produto.pk %}" class="btn btn-secondary">

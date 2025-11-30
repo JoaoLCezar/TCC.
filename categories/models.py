@@ -15,7 +15,7 @@ class Categoria(models.Model):
 
     class Meta:
         ordering = ('nome',)
-
+        db_table = 'categorias'
         verbose_name = "Categoria"
         verbose_name_plural = "Categorias"
 

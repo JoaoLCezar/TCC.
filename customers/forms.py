@@ -1,5 +1,6 @@
 from django import forms
 from .models import Cliente
+from .validators import is_valid_cpf, format_cpf, only_digits
 
 class ClienteForm(forms.ModelForm):
     class Meta: 
@@ -17,3 +18,22 @@ class ClienteForm(forms.ModelForm):
 
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = 'form-control'
+
+    def clean_documento(self):
+        doc = self.cleaned_data.get('documento')
+        if not doc:
+            return doc
+
+        # Normalize and validate CPF
+        if not is_valid_cpf(doc):
+            raise forms.ValidationError('CPF inválido. Verifique e tente novamente.')
+
+        # Store formatted CPF (human-readable)
+        # Ensure no other cliente has the same CPF (ignoring formatting)
+        normalized = only_digits(doc)
+        qs = Cliente.objects.filter(documento__isnull=False).exclude(pk=self.instance.pk if self.instance and self.instance.pk else None)
+        for other in qs:
+            if only_digits(other.documento) == normalized:
+                raise forms.ValidationError('Já existe um cliente cadastrado com este CPF.')
+
+        return format_cpf(doc)

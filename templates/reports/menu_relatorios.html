@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Relatórios do Sistema</h1>
+    <p class="text-muted">Gere relatórios detalhados de vendas, produtos, estoque e clientes</p>
+    
+    <hr class="my-4">
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📊 Relatório de Vendas</h5>
+                    <p class="card-text">Visualize o histórico de vendas, faturamento e produtos mais vendidos por período.</p>
+                    <a href="{% url 'reports:relatorio_vendas' %}" class="btn btn-primary">Ver Relatório</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📦 Relatório de Produtos</h5>
+                    <p class="card-text">Consulte a lista completa de produtos, preços e valor total do estoque.</p>
+                    <a href="{% url 'reports:relatorio_produtos' %}" class="btn btn-success">Ver Relatório</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📋 Relatório de Estoque</h5>
+                    <p class="card-text">Acompanhe a movimentação de entrada e saída de produtos do estoque.</p>
+                    <a href="{% url 'reports:relatorio_estoque' %}" class="btn btn-warning">Ver Relatório</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h5 class="card-title">👥 Relatório de Clientes</h5>
+                    <p class="card-text">Veja o ranking de clientes por volume de compras e faturamento.</p>
+                    <a href="{% url 'reports:relatorio_clientes' %}" class="btn btn-info">Ver Relatório</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h5 class="card-title">💰 Relatório de Lucratividade</h5>
+                    <p class="card-text">Análise detalhada de lucro, margem e custo por produto vendido.</p>
+                    <a href="{% url 'reports:relatorio_lucratividade' %}" class="btn btn-danger">Ver Relatório</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card border-dark">
+                <div class="card-body text-center">
+                    <h5 class="card-title">🧾 Relatório do Caixa</h5>
+                    <p class="card-text">Totais por sessão de caixa e por forma de pagamento.</p>
+                    <a href="{% url 'reports:relatorio_caixa' %}" class="btn btn-dark">Ver Relatório</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

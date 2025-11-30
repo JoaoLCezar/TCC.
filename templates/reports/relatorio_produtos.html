@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Produtos - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>📦 Relatório de Produtos</h1>
+        <a href="{% url 'reports:menu_relatorios' %}" class="btn btn-secondary">← Voltar</a>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total de Produtos</h6>
+                    <p class="card-text fs-3">{{ total_produtos }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Valor do Estoque</h6>
+                    <p class="card-text fs-3">R$ {{ valor_total_estoque|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Produtos Zerados</h6>
+                    <p class="card-text fs-3">{{ produtos_zerados }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title">Baixo Estoque</h6>
+                    <p class="card-text fs-3">{{ produtos_baixo_estoque }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botão PDF -->
+    <div class="mb-3">
+        <a href="{% url 'reports:relatorio_produtos_pdf' %}" class="btn btn-danger" target="_blank">
+            📄 Exportar para PDF
+        </a>
+    </div>
+    
+    <!-- Lista de Produtos -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Lista Completa de Produtos</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Preço</th>
+                        <th>Estoque</th>
+                        <th>Valor Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produto in produtos %}
+                    <tr {% if produto.estoque == 0 %}class="table-danger"{% elif produto.estoque <= 10 %}class="table-warning"{% endif %}>
+                        <td>{{ produto.nome }}</td>
+                        <td>{{ produto.categoria.nome|default:"N/A" }}</td>
+                        <td>R$ {{ produto.preco|floatformat:2 }}</td>
+                        <td>{{ produto.estoque }}</td>
+                        <td>R$ {{ produto.valor_estoque|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">Nenhum produto cadastrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

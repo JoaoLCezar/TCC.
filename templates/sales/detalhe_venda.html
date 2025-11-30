@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load report_filters %}
 
 {% block title %}Detalhes da Venda #{{ venda.pk }} - VendaFácil{% endblock %}
 
@@ -10,23 +11,25 @@
                 <h1 class="card-title">Detalhes da Venda #{{ venda.pk }}</h1>
                 <hr>
 
-                <h3> Itens Incluídos</h3>
+                <h3>Itens Incluídos</h3>
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th scope="col">Produtos</th>
-                            <th scope="col" class="text-center">Quantidade</th>
-                            <th scope="col" class="text-center">Preço Unitário</th>
-                            <th scope="col" class="text-center">Subtotal</th>
+                            <th>Produto</th>
+                            <th class="text-end">Qtd</th>
+                            <th class="text-end">Devolvido</th>
+                            <th class="text-end">Unitário</th>
+                            <th class="text-end">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in itens_da_venda %}
                         <tr>
                             <td>{{ item.produto.nome }}</td>
-                            <td class="text-center">{{ item.quantidade }}</td>
-                            <td class="text-center">R$ {{ item.preco_unitario|floatformat:2 }}</td>
-                            <td class="text-center">R$ {{item.subtotal|floatformat:2 }}</td>
+                            <td class="text-end">{{ item.quantidade }}</td>
+                            <td class="text-end">{{ item.qtd_devolvida }}</td>
+                            <td class="text-end">{{ item.preco_unitario|currency_br }}</td>
+                            <td class="text-end">{{ item.subtotal|currency_br }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -49,7 +52,7 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between">
                         <strong>Vendedor:</strong>
-                        <span>{{ venda.usuario.username }}</span>
+                        <span>{% if venda.usuario %}{{ venda.usuario.username }}{% else %}Não atribuído{% endif %}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between">
                         <strong>Status:</strong>
@@ -63,11 +66,26 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between">
                         <strong>TOTAL:</strong>
-                        <span>{{ venda.valor_total|floatformat:2 }}</span>
+                        <span>{{ venda.valor_total|currency_br }}</span>
                     </li>
                 </ul>
+                <div class="mb-2">
+                    <div class="btn-group w-100 mb-2">
+                        <a href="{% url 'sales:imprimir_recibo' venda_id=venda.pk %}" class="btn btn-success" target="_blank">Imprimir Recibo</a>
+                    </div>
+                    {% if venda.status == 'CONCLUIDA' %}
+                    <form method="post" action="{% url 'sales:cancelar_venda_existente' venda.pk %}" class="border rounded p-2">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            <label for="motivo" class="form-label">Motivo do cancelamento</label>
+                            <input type="text" name="motivo" id="motivo" class="form-control" placeholder="Ex.: item trocado, erro de lançamento" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Cancelar esta venda e devolver os itens ao estoque?')">Cancelar Venda</button>
+                    </form>
+                    {% endif %}
+                </div>
                 <hr>
-                <a href="{% url 'sales:historico_vendas' %}" class="btn btn-secundary w-100">
+                <a href="{% url 'sales:historico_vendas' %}" class="btn btn-secondary w-100">
                     &larr; Voltar para o Histórico
                 </a>
             </div>

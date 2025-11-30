@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load report_filters %}
+
+{% block title %}Relatório do Caixa - VendaFácil{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-cash-coin"></i> Relatório do Caixa</h1>
+    <div class="d-flex gap-2">
+      <a class="btn btn-danger" target="_blank" href="{% url 'reports:relatorio_caixa_pdf' %}?{% if sessao_id %}sessao_id={{ sessao_id }}{% else %}data_inicio={{ data_inicio }}&data_fim={{ data_fim }}{% endif %}{% if usuario_id %}&usuario_id={{ usuario_id }}{% endif %}"><i class="bi bi-file-pdf"></i> Exportar PDF</a>
+      <a class="btn btn-secondary" href="{% url 'reports:menu_relatorios' %}"><i class="bi bi-arrow-left"></i> Voltar</a>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label for="data_inicio" class="form-label">Data Início</label>
+          <input type="date" id="data_inicio" name="data_inicio" value="{{ data_inicio }}" class="form-control" {% if sessao_id %}disabled{% endif %}>
+        </div>
+        <div class="col-md-3">
+          <label for="data_fim" class="form-label">Data Fim</label>
+          <input type="date" id="data_fim" name="data_fim" value="{{ data_fim }}" class="form-control" {% if sessao_id %}disabled{% endif %}>
+        </div>
+        <div class="col-md-3">
+          <label for="sessao_id" class="form-label">Sessão de Caixa (opcional)</label>
+          <select id="sessao_id" name="sessao_id" class="form-select">
+            <option value="">Todas (por período)</option>
+            {% for s in sessoes %}
+              <option value="{{ s.id }}" {% if sessao_id == s.id %}selected{% endif %}>
+                #{{ s.id }} - {{ s.usuario.username }} - {{ s.data_abertura|date:"d/m/Y H:i" }} ({{ s.status }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="usuario_id" class="form-label">Vendedor</label>
+          <select id="usuario_id" name="usuario_id" class="form-select">
+            <option value="">Todos</option>
+            {% for v in vendedores %}
+              <option value="{{ v.id }}" {% if usuario_id == v.id %}selected{% endif %}>{{ v.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Filtrar</button>
+        </div>
+      </form>
+      <small class="text-muted">Dica: selecione uma sessão para ignorar o período.</small>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-white bg-success">
+        <div class="card-body">
+          <h6 class="card-title">Total Recebido</h6>
+          <h2 class="mb-0">{{ total_recebido|currency_br }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-light">
+        <div class="card-body">
+          <h6 class="card-title">Vendas Concluídas</h6>
+          <h2 class="mb-0">{{ qtd_concluidas }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-light">
+        <div class="card-body">
+          <h6 class="card-title">Vendas Canceladas</h6>
+          <h2 class="mb-0">{{ qtd_canceladas }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <h6 class="card-title">Ticket Médio</h6>
+          <h2 class="mb-0">{{ ticket_medio|currency_br }}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if sessao_escolhida %}
+  <div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+      <strong>Resumo da Sessão #{{ sessao_escolhida.id }}</strong>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-3"><strong>Operador:</strong><br>{{ sessao_escolhida.usuario.username }}</div>
+        <div class="col-md-3"><strong>Status:</strong><br>{{ sessao_escolhida.status }}</div>
+        <div class="col-md-3"><strong>Abertura:</strong><br>{{ sessao_escolhida.data_abertura|date:"d/m/Y H:i" }}</div>
+        <div class="col-md-3"><strong>Suprimento:</strong><br>{{ sessao_escolhida.valor_inicial|currency_br }}</div>
+      </div>
+      <div class="row mt-2">
+        <div class="col-md-3"><strong>Recebido em Dinheiro:</strong><br>{{ total_dinheiro|default:0|currency_br }}</div>
+        <div class="col-md-3"><strong>Suprimentos:</strong><br>{{ total_suprimentos|default:0|currency_br }}</div>
+        <div class="col-md-3"><strong>Sangrias:</strong><br>{{ total_sangrias|default:0|currency_br }}</div>
+      </div>
+      {% if sessao_escolhida.valor_final_informado is not None %}
+      <div class="row mt-2">
+        <div class="col-md-3"><strong>Esperado (Caixa):</strong><br>{{ esperado_final|currency_br }}</div>
+        <div class="col-md-3"><strong>Informado:</strong><br>{{ sessao_escolhida.valor_final_informado|currency_br }}</div>
+        <div class="col-md-3">
+          <strong>Diferença:</strong><br>
+          {% if diferenca %}
+            <span class="badge {% if diferenca >= 0 %}bg-success{% else %}bg-danger{% endif %}">{{ diferenca|currency_br }}</span>
+          {% else %}
+            —
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <strong>Totais por Forma de Pagamento</strong>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>Forma</th>
+                  <th class="text-end">Qtd</th>
+                  <th class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in por_forma %}
+                <tr>
+                  <td>{{ row.forma_pagamento }}</td>
+                  <td class="text-end">{{ row.quantidade }}</td>
+                  <td class="text-end">{{ row.total|currency_br }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="3" class="text-center text-muted">Nenhuma venda encontrada.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+          <strong>Totais por Vendedor</strong>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>Vendedor</th>
+                  <th class="text-end">Qtd</th>
+                  <th class="text-end">Total</th>
+                  <th class="text-end">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for v in por_vendedor %}
+                <tr>
+                  <td>{% if v.usuario__username %}{{ v.usuario__username }}{% else %}Não atribuído{% endif %}</td>
+                  <td class="text-end">{{ v.quantidade }}</td>
+                  <td class="text-end">{{ v.total|currency_br }}</td>
+                  <td class="text-end">{{ v.percentual|floatformat:1 }}%</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="3" class="text-center text-muted">Nenhuma venda encontrada.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+          <strong>Totais por Sessão</strong>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Operador</th>
+                  <th>Status</th>
+                  <th>Aberto em</th>
+                  <th class="text-end">Qtd</th>
+                  <th class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in por_sessao %}
+                <tr>
+                  <td>#{{ s.sessao__id }}</td>
+                  <td>{{ s.sessao__usuario__username }}</td>
+                  <td>{{ s.sessao__status }}</td>
+                  <td>{{ s.sessao__data_abertura|date:"d/m/Y H:i" }}</td>
+                  <td class="text-end">{{ s.quantidade }}</td>
+                  <td class="text-end">{{ s.total|currency_br }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center text-muted">Nenhuma sessão encontrada.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

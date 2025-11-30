@@ -11,6 +11,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+
+# Dev master (bypass auth user table) toggle
+DEV_MASTER_ENABLED = os.getenv('DEV_MASTER_ENABLED', '0') == '1'
+if DEV_MASTER_ENABLED:
+    # Use signed cookie sessions to avoid DB sessions when using dev master
+    SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +32,7 @@ SECRET_KEY = 'django-insecure-s)9i+q)pyn*j75p_ia5ckwu684gw27@csbwv+&0v-e!3a_d=0t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -44,7 +51,8 @@ INSTALLED_APPS = [
     'categories',
     'sales',
     'customers',
-    'suppliers'
+    'suppliers',
+    'reports'
 ]
 
 MIDDLEWARE = [
@@ -53,6 +61,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Dev master middleware (no-op unless DEV_MASTER_ENABLED=1)
+    'core.middleware.DevMasterMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -71,6 +81,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'sales.context_processors.verificar_caixa_aberto',
+                'core.context_processors.dados_empresa',
             ],
         },
     },
@@ -94,7 +105,6 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -117,9 +127,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-br'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 
@@ -144,8 +154,8 @@ LOGIN_REDIRECT_URL = 'dashboard'
 
 LOGOUT_REDIRECT_URL = 'dashboard'
 
-# URL base para aceder aos ficheiros no navegador
-MEDIA_URL = '/media/'
-
-# Caminho físico no computador onde os ficheiros ficam
-MEDIA_ROOT = BASE_DIR / 'media'
+# Dados da empresa usados em recibos e relatórios (ajuste conforme necessidade)
+EMPRESA_NOME = os.getenv('EMPRESA_NOME', 'Minha Loja de Teste')
+EMPRESA_ENDERECO = os.getenv('EMPRESA_ENDERECO', 'Rua Teste, 123 - Centro, São Paulo/SP')
+EMPRESA_TELEFONE = os.getenv('EMPRESA_TELEFONE', '(11) 90000-0000')
+EMPRESA_CNPJ = os.getenv('EMPRESA_CNPJ', '00.000.000/0000-00')

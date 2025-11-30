@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load report_filters %}
+
+{% block title %}Devolução - Venda #{{ venda.pk }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Registrar Devolução - Venda #{{ venda.pk }}</h1>
+    <a href="{% url 'sales:detalhe_venda' venda.pk %}" class="btn btn-secondary">Voltar</a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="table-responsive">
+          <table class="table table-striped table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>Produto</th>
+                <th class="text-end">Vendido</th>
+                <th class="text-end">Já Devolvido</th>
+                <th class="text-end">Unitário</th>
+                <th class="text-end">Devolver</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in itens %}
+              <tr>
+                <td>{{ item.produto.nome }}</td>
+                <td class="text-end">{{ item.quantidade }}</td>
+                <td class="text-end">{{ item.qtd_devolvida }}</td>
+                <td class="text-end">{{ item.preco_unitario|currency_br }}</td>
+                <td class="text-end" style="max-width: 140px;">
+                  <input type="number" name="qtd_{{ item.id }}" class="form-control form-control-sm" min="0" max="{{ item.quantidade|add:-item.qtd_devolvida }}" step="1" value="0">
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Motivo (opcional)</label>
+          <input type="text" name="motivo" class="form-control" placeholder="Ex: produto com defeito, arrependimento...">
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-warning">Registrar Devolução</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

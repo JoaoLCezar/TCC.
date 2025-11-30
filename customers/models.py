@@ -36,6 +36,7 @@ class Cliente(models.Model):
 
     class Meta:
         ordering = ('nome',)
+        db_table = 'clientes'
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
 

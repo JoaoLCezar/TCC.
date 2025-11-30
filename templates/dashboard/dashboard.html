@@ -54,7 +54,7 @@
         </div>
         
         <div class="col-md-6 col-lg-4 mb-3">
-            <div class="card h-100">
+            <div class="card h-100 border-primary">
                 <div class="card-body text-center">
                     <h5 class="card-title">Operação de Caixa</h5>
                     <p class="card-text">Iniciar uma nova venda no PDV.</p>
@@ -86,9 +86,39 @@
         <div class="col-md-6 col-lg-4 mb-3">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Gestão de Caixa</h5>
-                    <p class="card-text">Ver histórico de aberturas e fechos de caixa.</p>
-                    <a href="{% url 'sales:listar_sessoes' %}" class="btn btn-outline-secondary">Ver Sessões</a>
+                    <h5 class="card-title">Categorias</h5>
+                    <p class="card-text">Gerenciar categorias de produtos.</p>
+                    <a href="{% url 'categories:listar_categorias' %}" class="btn btn-outline-secondary">Ver Categorias</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Clientes</h5>
+                    <p class="card-text">Cadastrar e gerenciar clientes.</p>
+                    <a href="{% url 'customers:listar_clientes' %}" class="btn btn-outline-secondary">Ver Clientes</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Fornecedores</h5>
+                    <p class="card-text">Cadastrar e gerenciar fornecedores.</p>
+                    <a href="{% url 'suppliers:listar_fornecedores' %}" class="btn btn-outline-secondary">Ver Fornecedores</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📊 Relatórios</h5>
+                    <p class="card-text">Gerar relatórios de vendas, produtos e estoque.</p>
+                    <a href="{% url 'reports:menu_relatorios' %}" class="btn btn-success">Ver Relatórios</a>
                 </div>
             </div>
         </div>

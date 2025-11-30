@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load report_filters %}
 
 {% block title %}{{ produto.nome }} - Detalhes do Produto{% endblock %}
 
@@ -47,7 +48,7 @@
                     Excluir
                 </a>
                 
-                <a href="{% url 'products:listar_produtos' %}" class="btn btn-secondary mt-3">
+                <a href="{% url 'products:listar_produtos' %}" class="btn btn-secondary mt-2">
                     &larr; Voltar para a lista
                 </a>
             </div>
@@ -81,8 +82,14 @@
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item bg-light">
                         <strong>Preço:</strong>
-                        <span class="fs-4 text-success float-end">R$ {{ produto.preco }}</span>
+                        <span class="fs-4 text-success float-end">{{ produto.preco|currency_br }}</span>
                     </li>
+                    {% if request.user|has_group:'Gerentes' %}
+                    <li class="list-group-item bg-light">
+                        <strong>Preço de custo:</strong>
+                        <span class="fs-6 float-end">{{ produto.preco_custo|currency_br }}</span>
+                    </li>
+                    {% endif %}
                     <li class="list-group-item bg-light">
                         <strong>Estoque:</strong>
                         <span class="fs-4 float-end">{{ produto.estoque }}</span>
